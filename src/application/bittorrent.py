@@ -80,6 +80,7 @@ class BitTorrent(Thread):
 
     def get_bitfield(self):
         name = self.name + "/bitfield"
+        print(name)
         self.cef_handle.send_interest(name=name)
         packet = self.cef_handle.receive()
         if packet.is_failed and packet.name != name:
