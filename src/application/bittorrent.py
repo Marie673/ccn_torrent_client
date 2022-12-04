@@ -47,7 +47,7 @@ class BitTorrent(Thread):
         self.pieces = self._generate_pieces()
         self.complete_pieces = 0
 
-        self.name = "ccn:/BitTorrent/" + str(self.info_hash.hex()) + "/"
+        self.name = "ccnx:/BitTorrent/" + str(self.info_hash.hex()) + "/"
 
         self.cef_handle = cefpyco.CefpycoHandle()
         self.cef_handle.begin()
