@@ -83,7 +83,7 @@ class BitTorrent(Thread):
         print(name)
         self.cef_handle.send_interest(name=name)
 
-        packet = self.cef_handle.receive(timeout_ms=10000)
+        packet = self.cef_handle.receive(timeout_ms=20000)
         if packet.is_failed and packet.name != name:
             raise Exception("packet receive failed")
 
