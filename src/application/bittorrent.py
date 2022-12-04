@@ -89,6 +89,8 @@ class BitTorrent(Thread):
 
         data = packet.payload
         print(data)
+        print(len(data))
+        print(packet.end_chunk_num)
         """data[0:CHUNK_SIZE] = packet.end_chunk_num
         
         while True:
