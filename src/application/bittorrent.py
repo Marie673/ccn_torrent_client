@@ -79,7 +79,7 @@ class BitTorrent(Thread):
             time.sleep(1)"""
 
     def get_bitfield(self):
-        name = self.name + "/bitfield"
+        name = self.name + "bitfield"
         print(name)
         self.cef_handle.send_interest(name=name)
         packet = self.cef_handle.receive()
