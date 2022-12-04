@@ -82,6 +82,8 @@ class BitTorrent(Thread):
         name = self.name + "bitfield"
         print(name)
         self.cef_handle.send_interest(name=name)
+        self.cef_handle.send_interest(name=name)
+
         packet = self.cef_handle.receive()
         if packet.is_failed and packet.name != name:
             raise Exception("packet receive failed")
