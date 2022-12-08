@@ -32,7 +32,7 @@ class BitTorrent(Thread):
         self.file_path = CACHE_PATH + self.info.name
         try:
             os.makedirs(self.file_path)
-        except Exception:
+        except Exception as e:
             pass
         # number_of_pieces の計算
         if torrent.file_mode == FileMode.single_file:
@@ -43,7 +43,7 @@ class BitTorrent(Thread):
                 length += file.length
             self.number_of_pieces = int(length / self.info.piece_length)
 
-        self.bitfield = bitstring.BitArray(self.number_of_pieces)
+        self.bitfield: bitstring.BitArray = bitstring.BitArray(self.number_of_pieces)
         self.pieces = self._generate_pieces()
         self.complete_pieces = 0
 
@@ -51,6 +51,8 @@ class BitTorrent(Thread):
 
         self.cef_handle = cefpyco.CefpycoHandle()
         self.cef_handle.begin()
+
+        self.timer = time.time()
 
         if EVALUATION:
             with open(EVALUATION_PATH, "a") as file:
@@ -67,36 +69,32 @@ class BitTorrent(Thread):
         :return:
         """
         self.get_bitfield()
-        return
-
-        """while not self.all_pieces_completed():
+        while not self.all_pieces_completed():
+            if time.time() - self.timer > 5:
+                self.get_bitfield()
+                self.timer = time.time()
 
             for index, piece in enumerate(self.pieces):
                 if piece.is_full:
                     continue
+                if self.bitfield[index] != 1:
+                    continue
                 self.request_piece(index)
 
-            time.sleep(1)"""
+            time.sleep(1)
 
     def get_bitfield(self):
         name = self.name + "bitfield"
         print(name)
         self.cef_handle.send_interest(name=name)
 
+        # TODO 複数チャンクを想定できていないので対応する
         packet = self.cef_handle.receive(timeout_ms=20000)
         if packet.is_failed and packet.name != name:
             raise Exception("packet receive failed")
 
-        data = packet.payload
-        print(data)
-        print(len(data))
-        print(packet.chunk_num, packet.end_chunk_num)
-        """data[0:CHUNK_SIZE] = packet.end_chunk_num
-        
-        while True:
-            packet = self.cef_handle.receive()
-            if packet.is_failed and packet.name != name:
-                continue"""
+        data: bytes = packet.payload
+        self.bitfield = bitstring.BitArray(bytes=bytes(data))
 
     def _generate_pieces(self) -> List[Piece]:
         """
@@ -124,20 +122,13 @@ class BitTorrent(Thread):
         make blocks request to many peers.
         """
         piece = self.pieces[piece_index]
-
+        self.cef_handle.receive()
         # TODO ここでInterest送信
 
         if EVALUATION:
             with open(EVALUATION_PATH, "aw") as file:
                 data = str(datetime.datetime.now()) + f" piece_index: {piece_index}, status: send_request"
                 file.write(data)
-
-    def _update_bitfield(self, piece_index):
-        piece = self.pieces[piece_index]
-        if piece.is_full:
-            self.bitfield[piece_index] = 1
-        else:
-            self.bitfield[piece_index] = 0
 
     def all_pieces_completed(self) -> bool:
         for piece in self.pieces:

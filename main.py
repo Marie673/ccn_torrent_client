@@ -7,6 +7,7 @@ def main():
     torrent = Torrent(path)
     bp = b.BitTorrent(torrent)
     bp.start()
+    bp.join()
 
 
 if __name__ == "__main__":
