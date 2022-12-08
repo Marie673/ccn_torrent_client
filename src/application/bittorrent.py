@@ -13,7 +13,7 @@ CHUNK_SIZE = 1024 * 4
 CACHE_PATH = os.environ['HOME']+"/proxy_cache/"
 MAX_PEER_CONNECT = 1
 EVALUATION = True
-EVALUATION_PATH = "/evaluation/ccn_client/test"
+EVALUATION_PATH = "/root/evaluation/ccn_client/test"
 
 
 class BitTorrent(Thread):
