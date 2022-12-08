@@ -32,6 +32,8 @@ class Piece(object):
         self.raw_data: bytes = b''
         self.blocks: List[Block] = []
 
+        self.state = 0  # 0 is stop. 1 is start.
+
         self._init_blocks()
         signal.signal(signal.SIGALRM, self.update_block_status)
         signal.setitimer(signal.ITIMER_REAL, 1, 5)

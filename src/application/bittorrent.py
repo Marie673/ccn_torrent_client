@@ -2,7 +2,6 @@ import datetime
 import os
 import cefpyco
 import time
-from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
 import bitstring
 from src.domain.entity.piece.piece import Piece
@@ -17,7 +16,7 @@ EVALUATION = True
 EVALUATION_PATH = "/root/evaluation/ccn_client/test"
 
 
-class BitTorrent(Thread):
+class BitTorrent:
     def __init__(self, torrent: Torrent):
         """
         トレントファイル解析
@@ -26,7 +25,6 @@ class BitTorrent(Thread):
         ↓
         CCN Data受信
         """
-        super().__init__()
         self.torrent = torrent
         self.info: Info = torrent.info
         self.info_hash = torrent.info_hash
@@ -60,7 +58,7 @@ class BitTorrent(Thread):
                 data = str(datetime.datetime.now()) + " bittorrent process is start\n"
                 file.write(data)
 
-    def run(self) -> None:
+    def start(self) -> None:
         """
         Interest bitfield
         Data bitfield
@@ -70,20 +68,34 @@ class BitTorrent(Thread):
         :return:
         """
         self.get_bitfield()
-        tpe = ThreadPoolExecutor(max_workers=10)
+        tpe = ThreadPoolExecutor(max_workers=1)
         while not self.all_pieces_completed():
             if time.time() - self.timer > 5:
                 self.get_bitfield()
                 self.timer = time.time()
 
+            """index, piece = (0, self.pieces[0])
+            if piece.is_full:
+                continue
+            if self.bitfield[index] != 1:
+                continue
+            if piece.state == 1:
+                continue
+            self.pieces[0].state = 1
+            self.request_piece(index)"""
+            # tpe.submit(self.request_piece(index))
             for index, piece in enumerate(self.pieces):
                 if piece.is_full:
                     continue
                 if self.bitfield[index] != 1:
                     continue
+                if self.pieces[index].state == 1:
+                    continue
+                self.pieces[index].state = 1
                 tpe.submit(self.request_piece(index))
+                time.sleep(1)
 
-            time.sleep(1)
+            time.sleep(2)
         tpe.shutdown()
 
     def get_bitfield(self):
@@ -120,7 +132,6 @@ class BitTorrent(Thread):
         return pieces
 
     def request_piece(self, piece_index):
-        piece = self.pieces[piece_index]
         name = self.name + str(piece_index)
 
         handle = cefpyco.CefpycoHandle()
@@ -134,7 +145,7 @@ class BitTorrent(Thread):
         end_chunk_num = packet.end_chunk_num
 
         def send_interest():
-            for chunk_num in range(1, end_chunk_num):
+            for chunk_num in range(0, end_chunk_num):
                 handle.send_interest(name=name, chunk_num=chunk_num)
         send_interest()
 
@@ -144,25 +155,31 @@ class BitTorrent(Thread):
                 if packet.is_failed and packet.name != name:
                     send_interest()
 
-                # TODO データを受信した際の処理
-                payload = packet.payload
-                offset = payload.chunk_num * CHUNK_SIZE
+                if packet.is_succeeded:
+                    # TODO データを受信した際の処理
+                    payload = packet.payload
+                    offset = packet.chunk_num * CHUNK_SIZE
 
-                piece.set_block(offset=offset, data=payload)
-                if piece.are_all_blocks_full():
-                    if piece.set_to_full():
-                        self.complete_pieces += 1
-                        piece.write_on_disk()
-                        break
-
+                    self.pieces[piece_index].set_block(offset=offset, data=payload)
+                    if self.pieces[piece_index].are_all_blocks_full():
+                        if self.pieces[piece_index].set_to_full():
+                            self.complete_pieces += 1
+                            self.pieces[piece_index].write_on_disk()
+                            break
+            except KeyboardInterrupt:
+                return
             except Exception as e:
                 print(e)
+                raise e
+            finally:
+                handle.end()
 
+    """
         if EVALUATION:
             with open(EVALUATION_PATH, "aw") as file:
                 data = str(datetime.datetime.now()) + f" piece_index: {piece_index}, status: send_request"
                 file.write(data)
-
+    """
     def all_pieces_completed(self) -> bool:
         for piece in self.pieces:
             if not piece.is_full:
