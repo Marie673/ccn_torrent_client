@@ -68,7 +68,7 @@ class BitTorrent:
         :return:
         """
         self.get_bitfield()
-        tpe = ThreadPoolExecutor(max_workers=1)
+        tpe = ThreadPoolExecutor(max_workers=2)
         while not self.all_pieces_completed():
             if time.time() - self.timer > 5:
                 self.get_bitfield()
@@ -92,8 +92,9 @@ class BitTorrent:
                 if self.pieces[index].state == 1:
                     continue
                 self.pieces[index].state = 1
+
+                # self.request_piece(index)
                 tpe.submit(self.request_piece(index))
-                time.sleep(1)
 
             time.sleep(2)
         tpe.shutdown()
@@ -149,13 +150,13 @@ class BitTorrent:
                 handle.send_interest(name=name, chunk_num=chunk_num)
         send_interest()
 
-        while True:
-            try:
+        try:
+            while True:
                 packet = handle.receive()
                 if packet.is_failed and packet.name != name:
                     send_interest()
 
-                if packet.is_succeeded:
+                if packet.is_succeeded and packet.is_data:
                     # TODO データを受信した際の処理
                     payload = packet.payload
                     offset = packet.chunk_num * CHUNK_SIZE
@@ -166,13 +167,13 @@ class BitTorrent:
                             self.complete_pieces += 1
                             self.pieces[piece_index].write_on_disk()
                             break
-            except KeyboardInterrupt:
-                return
-            except Exception as e:
-                print(e)
-                raise e
-            finally:
-                handle.end()
+        except KeyboardInterrupt:
+            return
+        except Exception as e:
+            print(e)
+            raise e
+        finally:
+            handle.end()
 
     """
         if EVALUATION:
