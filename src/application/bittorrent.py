@@ -3,6 +3,7 @@ import os
 import cefpyco
 import time
 from threading import Thread
+from concurrent.futures import ThreadPoolExecutor
 import bitstring
 from src.domain.entity.piece.piece import Piece
 from src.domain.entity.torrent import Torrent, Info, FileMode
@@ -69,6 +70,7 @@ class BitTorrent(Thread):
         :return:
         """
         self.get_bitfield()
+        tpe = ThreadPoolExecutor(max_workers=10)
         while not self.all_pieces_completed():
             if time.time() - self.timer > 5:
                 self.get_bitfield()
@@ -79,9 +81,10 @@ class BitTorrent(Thread):
                     continue
                 if self.bitfield[index] != 1:
                     continue
-                self.request_piece(index)
+                tpe.submit(self.request_piece(index))
 
             time.sleep(1)
+        tpe.shutdown()
 
     def get_bitfield(self):
         name = self.name + "bitfield"
@@ -117,13 +120,43 @@ class BitTorrent(Thread):
         return pieces
 
     def request_piece(self, piece_index):
-        """
-        just send message. this function don't wait for response.
-        make blocks request to many peers.
-        """
         piece = self.pieces[piece_index]
-        self.cef_handle.receive()
-        # TODO ここでInterest送信
+        name = self.name + str(piece_index)
+
+        handle = cefpyco.CefpycoHandle()
+        handle.begin()
+        handle.send_interest(name=name, chunk_num=0)
+
+        try:
+            packet = handle.receive()
+        except Exception as e:
+            raise e
+        end_chunk_num = packet.end_chunk_num
+
+        def send_interest():
+            for chunk_num in range(1, end_chunk_num):
+                handle.send_interest(name=name, chunk_num=chunk_num)
+        send_interest()
+
+        while True:
+            try:
+                packet = handle.receive()
+                if packet.is_failed and packet.name != name:
+                    send_interest()
+
+                # TODO データを受信した際の処理
+                payload = packet.payload
+                offset = payload.chunk_num * CHUNK_SIZE
+
+                piece.set_block(offset=offset, data=payload)
+                if piece.are_all_blocks_full():
+                    if piece.set_to_full():
+                        self.complete_pieces += 1
+                        piece.write_on_disk()
+                        break
+
+            except Exception as e:
+                print(e)
 
         if EVALUATION:
             with open(EVALUATION_PATH, "aw") as file:
