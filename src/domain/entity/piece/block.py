@@ -1,6 +1,5 @@
 from enum import Enum
-
-BLOCK_SIZE = 1024 * 4
+import src.global_value as gv
 
 
 class State(Enum):
@@ -10,7 +9,7 @@ class State(Enum):
 
 
 class Block:
-    def __init__(self, state: State = State.FREE, block_size: int = BLOCK_SIZE,
+    def __init__(self, state: State = State.FREE, block_size: int = gv.CHUNK_SIZE,
                  data: bytes = b'', last_seen: float = 0):
         self.state: State = state
         self.block_size = block_size
