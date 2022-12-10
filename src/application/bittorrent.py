@@ -111,6 +111,7 @@ class BitTorrent:
 
         data: bytes = packet.payload
         self.bitfield = bitstring.BitArray(bytes=bytes(data))
+        print(self.bitfield)
 
     def _generate_pieces(self) -> List[Piece]:
         """

@@ -6,6 +6,7 @@ from src.domain.entity.torrent import Torrent
 
 
 def main():
+
     paths = [
         "128MB.torrent",
         "256MB.torrent",
@@ -15,7 +16,7 @@ def main():
     ]
     gv.EVALUATION_PATH = gv.EVALUATION_PATH + paths[int(sys.argv[1])]
     path = gv.TORRENT_FILE_PATH + paths[int(sys.argv[1])]
-
+    
     torrent = Torrent(path)
     bp = b.BitTorrent(torrent)
     bp.start()
