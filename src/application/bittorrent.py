@@ -206,16 +206,15 @@ class BitTorrent:
                     offset = packet.chunk_num * gv.CHUNK_SIZE
 
                     if piece.set_block(offset=offset, data=payload):
-                        complete_block += 1
+                        complete_block.value += 1
                     if piece.are_all_blocks_full():
                         if piece.set_to_full():
-                            self.complete_pieces += 1
                             piece.write_on_disk()
                             # self.pieces[piece_index].raw_data = b""
                             log(f"{piece.piece_index}, complete")
                             break
                         else:
-                            complete_block -= piece.number_of_blocks
+                            complete_block.value -= piece.number_of_blocks
                             send_interest()
 
         except KeyboardInterrupt:
@@ -234,9 +233,9 @@ class BitTorrent:
         return True
 
     def print_progress(self):
-        progress = (self.compete_block / self.total_block) * 100
+        progress = (self.compete_block.value / self.total_block) * 100
         print(f"[piece: {self.complete_pieces} / {self.number_of_pieces}]"
-              f"[block: {self.compete_block} / {self.total_block}, "
+              f"[block: {self.compete_block.value} / {self.total_block}, "
               f"{progress:.2f}%]")
 
 
