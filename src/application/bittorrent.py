@@ -168,6 +168,8 @@ class BitTorrent:
         return pieces
 
     def request_piece(self, piece: Piece, complete_block):
+        print(type(complete_block))
+        print(complete_block.value)
         log(f"{piece.piece_index}, start")
         name = self.name + str(piece.piece_index)
 
