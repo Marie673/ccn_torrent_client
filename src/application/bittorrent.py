@@ -101,7 +101,6 @@ class BitTorrent:
                         self.pieces[index].state = 1
                         futures_list.append(future)
 
-                    print("test")
                     for future in futures.as_completed(futures_list):
                         res_piece = future.result()
                         self.pieces[res_piece.piece_index] = res_piece
@@ -112,7 +111,7 @@ class BitTorrent:
             self.print_progress()
         except KeyboardInterrupt:
             self.healthy = False
-            for future in futures:
+            for future in futures_list:
                 future.cancel()
         except Exception as e:
             print(e)
