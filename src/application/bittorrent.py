@@ -99,6 +99,7 @@ class BitTorrent:
                         if len(futures_list) > 5:
                             break
                         future = executor.submit(self.request_piece, piece)
+                        print(len(futures_list))
 
                         self.pieces[index].state = 1
                         futures_list.append(future)
