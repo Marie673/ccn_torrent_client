@@ -52,7 +52,7 @@ class BitTorrent:
 
         self.healthy = True
 
-        self.compete_block = Value('i', 0)
+        self.compete_block = 0
         self.total_block = 0
         for piece in self.pieces:
             self.total_block += piece.number_of_blocks
@@ -203,7 +203,7 @@ class BitTorrent:
         send_interest()
 
         try:
-            while self.healthy:
+            while True:
                 packet = handle.receive()
                 if packet.is_failed and packet.name != name:
                     send_interest()
@@ -243,9 +243,9 @@ class BitTorrent:
         return True
 
     def print_progress(self):
-        progress = (self.compete_block.value / self.total_block) * 100
+        progress = (self.compete_block / self.total_block) * 100
         print(f"[piece: {self.complete_pieces} / {self.number_of_pieces}]"
-              f"[block: {self.compete_block.value} / {self.total_block}, "
+              f"[block: {self.compete_block} / {self.total_block}, "
               f"{progress:.2f}%]")
 
 
