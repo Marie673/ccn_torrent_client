@@ -175,20 +175,15 @@ class BitTorrent:
         end_chunk_num = packet.end_chunk_num
 
         def send_interest():
-            total_interest = 0
             for chunk_num, block in enumerate(self.pieces[piece_index].blocks):
                 if block.state == State.FULL:
                     continue
                 handle.send_interest(name=name, chunk_num=chunk_num)
                 log(f"{piece_index}, Interest, {chunk_num}")
-                total_interest += 1
-                if total_interest >= 32:
-                    return
 
         send_interest()
 
         try:
-            total_receive = 0
             while self.healthy:
                 packet = handle.receive()
                 if packet.is_failed and packet.name != name:
@@ -213,10 +208,6 @@ class BitTorrent:
                         else:
                             self.compete_block -= self.pieces[piece_index].number_of_blocks
                             send_interest()
-                    total_receive += 1
-                    if total_receive >= 32:
-                        total_receive = 0
-                        send_interest()
 
         except KeyboardInterrupt:
             return
