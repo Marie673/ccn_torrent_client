@@ -82,9 +82,9 @@ class BitTorrent:
                     screen_timer = time.time()
 
         th = Thread(target=schedule)
-        th.start()
+        # th.start()
 
-        tpe = ProcessPoolExecutor(max_workers=gv.MAX_PEER_CONNECT)
+        # tpe = ProcessPoolExecutor(max_workers=gv.MAX_PEER_CONNECT)
         try:
             """
             while not self.all_pieces_completed():
