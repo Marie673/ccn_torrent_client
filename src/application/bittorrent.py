@@ -105,8 +105,6 @@ class BitTorrent:
                         res_piece = future.result()
                         self.pieces[res_piece.piece_index] = res_piece
                         self.complete_pieces += 1
-                        print(len(futures_list))
-
 
             self.healthy = False
             self.print_progress()
