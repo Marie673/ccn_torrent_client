@@ -3,7 +3,7 @@ import os
 import cefpyco
 import time
 import src.global_value as gv
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 import bitstring
 from src.domain.entity.piece.piece import Piece
 from src.domain.entity.piece.block import State
@@ -84,19 +84,20 @@ class BitTorrent:
         th = Thread(target=schedule)
         th.start()
 
-        tpe = ThreadPoolExecutor(max_workers=gv.MAX_PEER_CONNECT)
+        tpe = ProcessPoolExecutor(max_workers=gv.MAX_PEER_CONNECT)
         try:
             while not self.all_pieces_completed():
-                for index, piece in enumerate(self.pieces):
+                """for index, piece in enumerate(self.pieces):
                     if piece.is_full:
                         continue
                     if self.bitfield[index] != 1 and self.bitfield[0] == 1:
                         continue
                     if self.pieces[index].state == 1:
                         continue
-                    self.pieces[index].state = 1
+                    self.pieces[index].state = 1"""
 
-                    tpe.submit(self.request_piece(index))
+                self.pieces = tpe.map(self.request_piece, self.pieces)
+
             self.healthy = False
             self.print_progress()
         except KeyboardInterrupt:
@@ -157,30 +158,30 @@ class BitTorrent:
 
         return pieces
 
-    def request_piece(self, piece_index):
-        print(f"start request {piece_index}")
-        log(f"{piece_index}, start")
-        name = self.name + str(piece_index)
+    def request_piece(self, piece: Piece):
+        print(f"start request {piece.piece_index}")
+        log(f"{piece.piece_index}, start")
+        name = self.name + str(piece.piece_index)
 
         handle = cefpyco.CefpycoHandle(enable_log=False)
         handle.begin()
 
         handle.send_interest(name=name, chunk_num=0)
-        log(f"{piece_index}, Interest, {0}")
+        log(f"{piece.piece_index}, Interest, {0}")
 
         try:
             packet = handle.receive()
         except Exception as e:
             raise e
-        log(f"{piece_index}, Data, {packet.chunk_num}")
+        log(f"{piece.piece_index}, Data, {packet.chunk_num}")
         end_chunk_num = packet.end_chunk_num
 
         def send_interest():
-            for chunk_num, block in enumerate(self.pieces[piece_index].blocks):
+            for chunk_num, block in enumerate(piece.blocks):
                 if block.state == State.FULL:
                     continue
                 handle.send_interest(name=name, chunk_num=chunk_num)
-                log(f"{piece_index}, Interest, {chunk_num}")
+                log(f"{piece.piece_index}, Interest, {chunk_num}")
 
         send_interest()
 
@@ -192,21 +193,21 @@ class BitTorrent:
 
                 if packet.is_succeeded and packet.is_data:
                     # TODO データを受信した際の処理
-                    log(f"{piece_index}, Data, {packet.chunk_num}")
+                    log(f"{piece.piece_index}, Data, {packet.chunk_num}")
                     payload = packet.payload
                     offset = packet.chunk_num * gv.CHUNK_SIZE
 
-                    if self.pieces[piece_index].set_block(offset=offset, data=payload):
+                    if piece.set_block(offset=offset, data=payload):
                         self.compete_block += 1
-                    if self.pieces[piece_index].are_all_blocks_full():
-                        if self.pieces[piece_index].set_to_full():
+                    if piece.are_all_blocks_full():
+                        if piece.set_to_full():
                             self.complete_pieces += 1
-                            self.pieces[piece_index].write_on_disk()
+                            piece.write_on_disk()
                             # self.pieces[piece_index].raw_data = b""
-                            log(f"{piece_index}, complete")
+                            log(f"{piece.piece_index}, complete")
                             break
                         else:
-                            self.compete_block -= self.pieces[piece_index].number_of_blocks
+                            self.compete_block -= piece.number_of_blocks
                             send_interest()
 
         except KeyboardInterrupt:
@@ -216,7 +217,7 @@ class BitTorrent:
             raise e
         finally:
             handle.end()
-        return
+        return piece
 
     def all_pieces_completed(self) -> bool:
         for piece in self.pieces:
