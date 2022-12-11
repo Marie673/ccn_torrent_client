@@ -2,7 +2,8 @@ import os
 import cefpyco
 import time
 import src.global_value as gv
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor
+from concurrent import futures
 from multiprocessing import Value
 import bitstring
 from src.domain.entity.piece.piece import Piece
@@ -84,7 +85,7 @@ class BitTorrent:
         th = Thread(target=schedule)
         th.start()
 
-        futures = []
+        futures_list = []
         try:
             with ProcessPoolExecutor(max_workers=gv.MAX_PEER_CONNECT) as executor:
                 while not self.all_pieces_completed():
@@ -98,13 +99,13 @@ class BitTorrent:
                         future = executor.submit(self.request_piece, piece)
 
                         self.pieces[index].state = 1
-                        futures.append(future)
+                        futures_list.append(future)
 
-                    for future in as_completed(futures):
+                    for future in futures.as_completed(futures_list):
                         res_piece = future.result()
                         self.pieces[res_piece.piece_index] = res_piece
                         self.complete_pieces += 1
-                        print(len(futures))
+                        print(len(futures_list))
 
             self.healthy = False
             self.print_progress()
