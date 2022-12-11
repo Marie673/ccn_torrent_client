@@ -1,9 +1,9 @@
-import datetime
 import os
 import cefpyco
 import time
 import src.global_value as gv
 from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import Value
 import bitstring
 from src.domain.entity.piece.piece import Piece
 from src.domain.entity.piece.block import State
@@ -51,7 +51,7 @@ class BitTorrent:
 
         self.healthy = True
 
-        self.compete_block = 0
+        self.compete_block = Value('i', 0)
         self.total_block = 0
         for piece in self.pieces:
             self.total_block += piece.number_of_blocks
@@ -95,7 +95,7 @@ class BitTorrent:
                             continue
                         if self.pieces[index].state == 1:
                             continue
-                        future = executor.submit(self.request_piece, piece)
+                        future = executor.submit(self.request_piece, piece, self.compete_block)
                         self.pieces[index].state = 1
                         futures.append(future)
 
@@ -103,6 +103,7 @@ class BitTorrent:
                         if future.done():
                             res_piece = future.result()
                             self.pieces[res_piece.piece_index] = res_piece
+                            self.complete_pieces += 1
                             del futures[index]
 
             self.healthy = False
@@ -166,7 +167,7 @@ class BitTorrent:
 
         return pieces
 
-    def request_piece(self, piece: Piece):
+    def request_piece(self, piece: Piece, complete_block):
         log(f"{piece.piece_index}, start")
         name = self.name + str(piece.piece_index)
 
@@ -205,7 +206,7 @@ class BitTorrent:
                     offset = packet.chunk_num * gv.CHUNK_SIZE
 
                     if piece.set_block(offset=offset, data=payload):
-                        self.compete_block += 1
+                        complete_block += 1
                     if piece.are_all_blocks_full():
                         if piece.set_to_full():
                             self.complete_pieces += 1
@@ -214,7 +215,7 @@ class BitTorrent:
                             log(f"{piece.piece_index}, complete")
                             break
                         else:
-                            self.compete_block -= piece.number_of_blocks
+                            complete_block -= piece.number_of_blocks
                             send_interest()
 
         except KeyboardInterrupt:
