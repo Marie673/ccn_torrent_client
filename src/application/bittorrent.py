@@ -69,7 +69,6 @@ class BitTorrent:
         :return:
         """
         self.get_bitfield()
-        self.pieces[0].__getstate__()
 
         def schedule():
             bitfield_timer = time.time()
