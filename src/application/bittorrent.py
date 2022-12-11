@@ -88,6 +88,7 @@ class BitTorrent:
         futures_list = []
         try:
             with ProcessPoolExecutor(max_workers=gv.MAX_PEER_CONNECT) as executor:
+                """
                 while not self.all_pieces_completed():
                     for index, piece in enumerate(self.pieces):
                         if piece.is_full:
@@ -106,6 +107,10 @@ class BitTorrent:
                         self.pieces[res_piece.piece_index] = res_piece
                         self.complete_pieces += 1
                         print(len(futures_list))
+                        """
+                result = executor.map(self.request_piece, self.pieces)
+            for piece in result:
+                self.pieces[piece.piece_index] = piece
 
             self.healthy = False
             self.print_progress()
