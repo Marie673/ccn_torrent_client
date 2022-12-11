@@ -98,7 +98,7 @@ class BitTorrent:
                         future = executor.submit(self.request_piece, piece, self.compete_block)
                         self.pieces[index].state = 1
                         futures.append(future)
-
+                    print(len(futures))
                     for future in as_completed(futures):
                         res_piece = future.result()
                         self.pieces[res_piece.piece_index] = res_piece
