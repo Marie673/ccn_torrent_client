@@ -84,33 +84,36 @@ class BitTorrent:
         th = Thread(target=schedule)
         # th.start()
 
-        # tpe = ProcessPoolExecutor(max_workers=gv.MAX_PEER_CONNECT)
+        futures = []
         try:
-            """
-            while not self.all_pieces_completed():
-                for index, piece in enumerate(self.pieces):
-                    if piece.is_full:
-                        continue
-                    if self.bitfield[index] != 1 and self.bitfield[0] == 1:
-                        continue
-                    if self.pieces[index].state == 1:
-                        continue
-                    self.pieces[index].state = 1
-            """
             with ProcessPoolExecutor(max_workers=gv.MAX_PEER_CONNECT) as executor:
-                self.pieces = executor.map(self.request_piece, self.pieces)
-                print(type(self.pieces))
-            print("test")
+                while not self.all_pieces_completed():
+                    for index, piece in enumerate(self.pieces):
+                        if piece.is_full:
+                            continue
+                        if self.bitfield[index] != 1 and self.bitfield[0] == 1:
+                            continue
+                        if self.pieces[index].state == 1:
+                            continue
+                        future = executor.submit(self.request_piece, piece)
+                        self.pieces[index].state = 1
+                        futures.append(future)
+
+                    for future in futures:
+                        if future.done():
+                            res_piece = future.result()
+                            self.pieces[res_piece.piece_index] = res_piece
 
             self.healthy = False
             self.print_progress()
         except KeyboardInterrupt:
             self.healthy = False
+            for future in futures:
+                future.cancel()
         except Exception as e:
             print(e)
         finally:
             th.join()
-            tpe.shutdown()
 
     def get_bitfield(self):
         try:
