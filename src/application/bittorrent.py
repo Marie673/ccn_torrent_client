@@ -95,10 +95,10 @@ class BitTorrent:
                             continue
                         if self.pieces[index].state == 1:
                             continue
-                        future = executor.submit(self.request_piece, piece, self.compete_block)
+                        future = executor.submit(self.request_piece, piece)
                         self.pieces[index].state = 1
                         futures.append(future)
-                    print(len(futures))
+
                     for future in as_completed(futures):
                         res_piece = future.result()
                         self.pieces[res_piece.piece_index] = res_piece
@@ -166,9 +166,7 @@ class BitTorrent:
 
         return pieces
 
-    def request_piece(self, piece: Piece, complete_block):
-        print(type(complete_block))
-        print(complete_block.value)
+    def request_piece(self, piece: Piece):
         log(f"{piece.piece_index}, start")
         name = self.name + str(piece.piece_index)
 
@@ -207,7 +205,7 @@ class BitTorrent:
                     offset = packet.chunk_num * gv.CHUNK_SIZE
 
                     if piece.set_block(offset=offset, data=payload):
-                        complete_block.value += 1
+                        #complete_block.value += 1
                     if piece.are_all_blocks_full():
                         if piece.set_to_full():
                             piece.write_on_disk()
@@ -215,7 +213,7 @@ class BitTorrent:
                             log(f"{piece.piece_index}, complete")
                             break
                         else:
-                            complete_block.value -= piece.number_of_blocks
+                            #complete_block.value -= piece.number_of_blocks
                             send_interest()
 
         except KeyboardInterrupt:
