@@ -99,10 +99,11 @@ class BitTorrent:
                         self.pieces[index].state = 1
                         futures.append(future)
 
-                    for future in futures:
+                    for index, future in enumerate(futures):
                         if future.done():
                             res_piece = future.result()
                             self.pieces[res_piece.piece_index] = res_piece
+                            del futures[index]
 
             self.healthy = False
             self.print_progress()
