@@ -82,7 +82,7 @@ class BitTorrent:
                     screen_timer = time.time()
 
         th = Thread(target=schedule)
-        # th.start()
+        th.start()
 
         futures = []
         try:
