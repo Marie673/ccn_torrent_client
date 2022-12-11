@@ -34,10 +34,6 @@ class Piece(object):
 
         self._init_blocks()
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        print(state)
-        return state
     def set_block(self, offset, data):
         index = int(offset / gv.CHUNK_SIZE)
 
