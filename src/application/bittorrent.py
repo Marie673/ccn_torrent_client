@@ -97,8 +97,9 @@ class BitTorrent:
                         continue
                     self.pieces[index].state = 1
             """
-
-            self.pieces = tpe.map(self.request_piece, self.pieces)
+            with ProcessPoolExecutor(max_workers=gv.MAX_PEER_CONNECT) as executor:
+                self.pieces = executor.map(self.request_piece, self.pieces)
+                print(type(self.pieces))
             print("test")
 
             self.healthy = False
