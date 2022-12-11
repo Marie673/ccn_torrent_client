@@ -97,7 +97,6 @@ class BitTorrent:
                         if self.pieces[index].state == 1:
                             continue
                         future = executor.submit(self.request_piece, index)
-                        print(len(futures_list))
 
                         self.pieces[index].state = 1
                         futures_list.append(future)
