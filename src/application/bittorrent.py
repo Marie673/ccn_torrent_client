@@ -86,17 +86,20 @@ class BitTorrent:
 
         tpe = ProcessPoolExecutor(max_workers=gv.MAX_PEER_CONNECT)
         try:
+            """
             while not self.all_pieces_completed():
-                """for index, piece in enumerate(self.pieces):
+                for index, piece in enumerate(self.pieces):
                     if piece.is_full:
                         continue
                     if self.bitfield[index] != 1 and self.bitfield[0] == 1:
                         continue
                     if self.pieces[index].state == 1:
                         continue
-                    self.pieces[index].state = 1"""
+                    self.pieces[index].state = 1
+            """
 
-                self.pieces = tpe.map(self.request_piece, self.pieces)
+            self.pieces = tpe.map(self.request_piece, self.pieces)
+            print("test")
 
             self.healthy = False
             self.print_progress()
