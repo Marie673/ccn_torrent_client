@@ -85,33 +85,28 @@ class BitTorrent:
         th = Thread(target=schedule)
         th.start()
 
-        executor = ProcessPoolExecutor(max_workers=gv.MAX_PEER_CONNECT)
         futures_list = []
         try:
+            with ProcessPoolExecutor(max_workers=gv.MAX_PEER_CONNECT) as executor:
+                while not self.all_pieces_completed():
+                    for index, piece in enumerate(self.pieces):
+                        if piece.is_full:
+                            continue
+                        if self.bitfield[index] != 1 and self.bitfield[0] == 1:
+                            continue
+                        if self.pieces[index].state == 1:
+                            continue
+                        future = executor.submit(self.request_piece, index)
 
-            """
-            while not self.all_pieces_completed():
-                for index, piece in enumerate(self.pieces):
-                    if piece.is_full:
-                        continue
-                    if self.bitfield[index] != 1 and self.bitfield[0] == 1:
-                        continue
-                    if self.pieces[index].state == 1:
-                        continue
-                    future = executor.submit(self.request_piece, index)
+                        self.pieces[index].state = 1
+                        futures_list.append(future)
 
-                    self.pieces[index].state = 1
-                    futures_list.append(future)
+                    for future in futures.as_completed(futures_list):
+                        res_piece = future.result()
+                        self.pieces[res_piece.piece_index] = res_piece
+                        self.complete_pieces += 1
+                        print(len(futures_list))
 
-                for future in futures.as_completed(futures_list):
-                    res_piece = future.result()
-                    self.pieces[res_piece.piece_index] = res_piece
-                    self.complete_pieces += 1
-                    print(len(futures_list))
-                    """
-            result = executor.map(self.request_piece, self.pieces)
-            for piece in result:
-                self.pieces[piece.piece_index] = piece
 
             self.healthy = False
             self.print_progress()
