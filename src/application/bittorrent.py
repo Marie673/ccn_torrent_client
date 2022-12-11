@@ -2,7 +2,7 @@ import os
 import cefpyco
 import time
 import src.global_value as gv
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import Value
 import bitstring
 from src.domain.entity.piece.piece import Piece
@@ -99,12 +99,10 @@ class BitTorrent:
                         self.pieces[index].state = 1
                         futures.append(future)
 
-                    for index, future in enumerate(futures):
-                        if future.done():
-                            res_piece = future.result()
-                            self.pieces[res_piece.piece_index] = res_piece
-                            self.complete_pieces += 1
-                            del futures[index]
+                    for future in as_completed(futures):
+                        res_piece = future.result()
+                        self.pieces[res_piece.piece_index] = res_piece
+                        self.complete_pieces += 1
 
             self.healthy = False
             self.print_progress()
