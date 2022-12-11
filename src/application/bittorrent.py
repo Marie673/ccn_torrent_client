@@ -206,6 +206,7 @@ class BitTorrent:
 
                     if piece.set_block(offset=offset, data=payload):
                         #complete_block.value += 1
+                        pass
                     if piece.are_all_blocks_full():
                         if piece.set_to_full():
                             piece.write_on_disk()
