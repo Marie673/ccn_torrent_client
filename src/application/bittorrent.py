@@ -191,8 +191,7 @@ class BitTorrent:
 
                 if packet.is_succeeded and packet.is_data:
                     # TODO データを受信した際の処理
-                    if piece_index == 511:
-                        log(f"{piece_index}, Data, {packet.chunk_num}")
+                    log(f"{piece_index}, Data, {packet.chunk_num}")
                     payload = packet.payload
                     offset = packet.chunk_num * gv.CHUNK_SIZE
 
