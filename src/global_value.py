@@ -1,5 +1,5 @@
-EVALUATION_PATH = "/root/evaluation/ccn_client/"
-TORRENT_FILE_PATH = "/root/evaluation/torrent_file/"
+EVALUATION_PATH = "/client/evaluation/ccn_client/"
+TORRENT_FILE_PATH = "/client/evaluation/torrent_file/"
 CACHE_PATH = "/client/proxy_cache/"
 
 CHUNK_SIZE = 1024 * 4
