@@ -96,8 +96,6 @@ class BitTorrent:
                             continue
                         if self.pieces[index].state == 1:
                             continue
-                        if len(futures_list) > 2:
-                            break
                         future = executor.submit(self.request_piece, index)
                         print(len(futures_list))
 
@@ -171,8 +169,9 @@ class BitTorrent:
 
         return pieces
 
-    def request_piece(self, piece_index):
-        piece = self.pieces[piece_index]
+    def request_piece(self, index):
+        print("start")
+        piece = self.pieces[index]
         log(f"{piece.piece_index}, start")
         name = self.name + str(piece.piece_index)
 
