@@ -171,7 +171,7 @@ class BitTorrent:
 
     def request_piece(self, piece: Piece):
         try:
-            print(f"start {piece.index}")
+            print(f"start {piece.piece_index}")
         except Exception as e:
             print(e)
 
