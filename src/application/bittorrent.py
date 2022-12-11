@@ -170,10 +170,6 @@ class BitTorrent:
         return pieces
 
     def request_piece(self, piece: Piece):
-        try:
-            print(f"start {piece.piece_index}")
-        except Exception as e:
-            print(e)
 
         log(f"{piece.piece_index}, start")
         name = self.name + str(piece.piece_index)
