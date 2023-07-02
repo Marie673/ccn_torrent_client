@@ -30,7 +30,8 @@ class Piece(object):
         self.raw_data: bytes = b''
         self.blocks: List[Block] = []
 
-        self.state = 0  # 0 is stop. 1 is start.
+        self.state: State = State.FREE
+        self.last_seen: float = 0
 
         self._init_blocks()
 
