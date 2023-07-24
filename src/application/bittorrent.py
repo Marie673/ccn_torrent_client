@@ -34,10 +34,11 @@ class BitTorrent:
         ↓
         CCN Data受信
         """
+        self.compete_block = 0
         self.torrent = torrent
         self.info: Info = torrent.info
         self.info_hash = torrent.info_hash
-        self.file_path = gv.CACHE_PATH + self.info.name
+        self.file_path = CACHE_PATH + self.info.name
         try:
             os.makedirs(self.file_path)
         except Exception as e:
@@ -102,6 +103,7 @@ class BitTorrent:
                     self.handle_piece(info)
                     self.cubic.now_wind -= 1
                     self.cubic.cals_cwind()
+                    self.print_progress()
         except Exception as e:
             logger.error(e)
         except KeyboardInterrupt:
@@ -173,15 +175,7 @@ class BitTorrent:
         return True
 
     def print_progress(self):
-        progress = (self.compete_block / self.total_block) * 100
+        progress = (self.compete_block / self.end_chunk_num) * 100
         print(f"[piece: {self.complete_pieces} / {self.number_of_pieces}]"
-              f"[block: {self.compete_block} / {self.total_block}, "
+              f"[block: {self.compete_block} / {self.end_chunk_num}, "
               f"{progress:.2f}%]")
-
-
-def log(msg):
-    msg = str(datetime.datetime.now()) + ", " + msg + "\n"
-    lock.acquire()
-    with open(gv.EVALUATION_PATH, "a+") as file:
-        file.write(msg)
-    lock.release()
