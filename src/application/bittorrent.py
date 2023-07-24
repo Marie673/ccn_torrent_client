@@ -10,6 +10,9 @@ from src.domain.entity.piece.piece import Piece
 from src.domain.entity.piece.block import State
 from src.domain.entity.torrent import Torrent, Info, FileMode
 from typing import List
+from threading import Lock, Thread
+import datetime
+
 
 from logger import logger
 
@@ -19,6 +22,7 @@ MAX_PEER_CONNECT = 1
 TIME_OUT = 4
 EVALUATION = True
 EVALUATION_PATH = "/client/evaluation/ccn_client/test"
+
 
 
 class BitTorrent:
@@ -33,11 +37,12 @@ class BitTorrent:
         self.torrent = torrent
         self.info: Info = torrent.info
         self.info_hash = torrent.info_hash
-        self.file_path = CACHE_PATH + self.info.name
+        self.file_path = gv.CACHE_PATH + self.info.name
         try:
             os.makedirs(self.file_path)
         except Exception as e:
             logger.error(e)
+
         # number_of_pieces の計算
         if torrent.file_mode == FileMode.single_file:
             self.number_of_pieces = int(self.info.length / self.info.piece_length)
@@ -140,6 +145,7 @@ class BitTorrent:
                 self.complete_pieces += 1
                 self.pieces[piece_index].write_on_disk()
 
+
     def _generate_pieces(self) -> List[Piece]:
         """
         torrentの全てのpieceを生成して初期化
@@ -164,5 +170,18 @@ class BitTorrent:
         for piece in self.pieces:
             if not piece.is_full:
                 return False
-
         return True
+
+    def print_progress(self):
+        progress = (self.compete_block / self.total_block) * 100
+        print(f"[piece: {self.complete_pieces} / {self.number_of_pieces}]"
+              f"[block: {self.compete_block} / {self.total_block}, "
+              f"{progress:.2f}%]")
+
+
+def log(msg):
+    msg = str(datetime.datetime.now()) + ", " + msg + "\n"
+    lock.acquire()
+    with open(gv.EVALUATION_PATH, "a+") as file:
+        file.write(msg)
+    lock.release()

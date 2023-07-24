@@ -3,8 +3,8 @@ from typing import List
 import hashlib
 import time
 import signal
-
-from src.domain.entity.piece.block import Block, BLOCK_SIZE, State
+import src.global_value as gv
+from src.domain.entity.piece.block import Block, State
 
 import yaml
 import logging.config
@@ -12,8 +12,6 @@ from logging import getLogger
 log_config = 'config.yaml'
 logging.config.dictConfig(yaml.load(open(log_config).read(), Loader=yaml.SafeLoader))
 logger = getLogger('develop')
-
-PENDING_TIME = 5
 
 
 class Piece(object):
@@ -27,7 +25,7 @@ class Piece(object):
         self.is_full: bool = False
         # pieceが保管されているディレクトリのパス
         self.file_path = file_path + '/' + str(piece_index)
-        self.number_of_blocks: int = int(math.ceil(float(piece_size) / BLOCK_SIZE))
+        self.number_of_blocks: int = int(math.ceil(float(piece_size) / gv.CHUNK_SIZE))
 
         self.raw_data: bytes = b''
         self.blocks: List[Block] = []
@@ -35,20 +33,15 @@ class Piece(object):
         self.state = 0  # 0 is stop. 1 is start.
 
         self._init_blocks()
-        signal.signal(signal.SIGALRM, self.update_block_status)
-        signal.setitimer(signal.ITIMER_REAL, 1, 5)
-
-    def update_block_status(self, signum, frame):  # if block is pending for too long : set it free
-        for i, block in enumerate(self.blocks):
-            if block.state == State.PENDING and (time.time() - block.last_seen) > PENDING_TIME:
-                self.blocks[i] = Block()
 
     def set_block(self, offset, data):
-        index = int(offset / BLOCK_SIZE)
+        index = int(offset / gv.CHUNK_SIZE)
 
         if not self.is_full and not self.blocks[index].state == State.FULL:
             self.blocks[index].data = data
             self.blocks[index].state = State.FULL
+            return True
+        return False
 
     def get_block(self, block_offset, block_length):
         if self.exist:
@@ -70,7 +63,7 @@ class Piece(object):
             if block.state == State.FREE:
                 self.blocks[block_index].state = State.PENDING
                 self.blocks[block_index].last_seen = time.time()
-                return self.piece_index, block_index * BLOCK_SIZE, block.block_size
+                return self.piece_index, block_index * gv.CHUNK_SIZE, block.block_size
 
         return None
 
@@ -99,8 +92,8 @@ class Piece(object):
             for i in range(self.number_of_blocks):
                 self.blocks.append(Block())
 
-            if (self.piece_size % BLOCK_SIZE) > 0:
-                self.blocks[self.number_of_blocks - 1].block_size = self.piece_size % BLOCK_SIZE
+            if (self.piece_size % gv.CHUNK_SIZE) > 0:
+                self.blocks[self.number_of_blocks - 1].block_size = self.piece_size % gv.CHUNK_SIZE
 
         else:
             self.blocks.append(Block(block_size=int(self.piece_size)))
