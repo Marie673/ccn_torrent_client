@@ -1,11 +1,11 @@
 import os
+import threading
+
 import cefpyco
 import time
-import src.global_value as gv
-from concurrent.futures import ProcessPoolExecutor
-from concurrent import futures
-from multiprocessing import Value
 import bitstring
+
+from src.application.cubic import Cubic
 from src.domain.entity.piece.piece import Piece
 from src.domain.entity.piece.block import State
 from src.domain.entity.torrent import Torrent, Info, FileMode
@@ -13,7 +13,16 @@ from typing import List
 from threading import Lock, Thread
 import datetime
 
-lock = Lock()
+
+from logger import logger
+
+CHUNK_SIZE = 1024 * 4
+CACHE_PATH = os.environ['HOME']+"/proxy_cache/"
+MAX_PEER_CONNECT = 1
+TIME_OUT = 4
+EVALUATION = True
+EVALUATION_PATH = "/client/evaluation/ccn_client/test"
+
 
 
 class BitTorrent:
@@ -31,10 +40,9 @@ class BitTorrent:
         self.file_path = gv.CACHE_PATH + self.info.name
         try:
             os.makedirs(self.file_path)
-        except FileExistsError:
-            pass
         except Exception as e:
-            raise e
+            logger.error(e)
+
         # number_of_pieces の計算
         if torrent.file_mode == FileMode.single_file:
             self.number_of_pieces = int(self.info.length / self.info.piece_length)
@@ -44,108 +52,99 @@ class BitTorrent:
                 length += file.length
             self.number_of_pieces = int(length / self.info.piece_length)
 
+        # 1ピース当たりのチャンク数
+        # ピースの最後を表現するときに、チャンクサイズで余りが出ても次のピースデータを含めない.
+        if self.info.piece_length % CHUNK_SIZE == 0:
+            self.chunks_per_piece = self.info.piece_length // CHUNK_SIZE
+        else:
+            self.chunks_per_piece = (self.info.piece_length // CHUNK_SIZE) + 1
+
+        # end_chunk_numの計算.
+        # chunk_numは0から数え始めるので、-1する.
+        self.end_chunk_num = self.chunks_per_piece * self.number_of_pieces - 1
+
         self.bitfield: bitstring.BitArray = bitstring.BitArray(self.number_of_pieces)
         self.pieces = self._generate_pieces()
         self.complete_pieces = 0
 
-        self.name = "ccnx:/BitTorrent/" + str(self.info_hash.hex()) + "/"
+        self.name = "ccnx:/BitTorrent/" + str(self.info_hash.hex())
 
-        self.healthy = True
+        self.cef_handle = cefpyco.CefpycoHandle()
+        self.cef_handle.begin()
 
-        self.compete_block = 0
-        self.total_block = 0
-        for piece in self.pieces:
-            self.total_block += piece.number_of_blocks
-        if gv.EVALUATION:
-            log("start")
+        self.cubic = Cubic()
 
-    def start(self) -> None:
-        """
-        Interest bitfield
-        Data bitfield
-
-        bitfieldに持っていないピースが存在
-            Interest piece
-        :return:
-        """
-        self.get_bitfield()
-
-        def schedule():
-            bitfield_timer = time.time()
-            screen_timer = time.time()
-            while self.healthy:
-                if time.time() - bitfield_timer > 10:
-                    self.get_bitfield()
-                    bitfield_timer = time.time()
-
-                if time.time() - screen_timer > 1:
-                    self.print_progress()
-                    screen_timer = time.time()
-
-        th = Thread(target=schedule)
-        th.start()
-
-        futures_list = []
+    def run(self):
+        listener = threading.Thread(target=self.listener())
+        listener.start()
         try:
-            with ProcessPoolExecutor(max_workers=gv.MAX_PEER_CONNECT) as executor:
-                while not self.all_pieces_completed():
-                    for index, piece in enumerate(self.pieces):
-                        if piece.is_full:
-                            continue
-                        if self.bitfield[index] != 1 and self.bitfield[0] == 1:
-                            continue
-                        if self.pieces[index].state == 1:
-                            continue
-                        future = executor.submit(self.request_piece, piece)
-
-                        self.pieces[index].state = 1
-                        futures_list.append(future)
-
-                    for future in futures.as_completed(futures_list):
-                        res_piece = future.result()
-                        self.pieces[res_piece.piece_index] = res_piece
-                        self.complete_pieces += 1
-
-            self.healthy = False
-            self.print_progress()
+            self.request_piece_handle()
+        except Exception as e:
+            logger.error(e)
         except KeyboardInterrupt:
-            self.healthy = False
-            for future in futures_list:
-                future.cancel()
-        except Exception as e:
-            print(e)
+            return
         finally:
-            th.join()
+            listener.join()
 
-    def get_bitfield(self):
+    def listener(self):
         try:
-            cef_handle = cefpyco.CefpycoHandle(enable_log=False)
-            cef_handle.begin()
+            while not self.all_pieces_completed():
+                info = self.cef_handle.receive()
+                if info.is_succeeded and info.is_data:
+                    prefix = info.name.split('/')
+                    if prefix[0] != 'ccnx:':
+                        continue
+                    if prefix[1] != 'BitTorrent':
+                        continue
+                    if prefix[2] != self.info_hash:
+                        continue
 
-            name = self.name + "bitfield"
-            for b in self.bitfield:
-                if b is True:
-                    continue
-                elif b is False:
-                    break
-
-            log("bitfield, Interest")
-            cef_handle.send_interest(name=name)
-
-            # TODO 複数チャンクを想定できていないので対応する
-            packet = cef_handle.receive()
-
-            if packet.is_failed and packet.name != name:
-                return
-                # raise Exception("packet receive failed")
-            elif packet.is_succeeded and packet.is_data:
-                log("bitfield, Data")
-                data: bytes = packet.payload
-                new_bitfield = bitstring.BitArray(bytes=bytes(data))
-                if len(self.bitfield) == len(new_bitfield):
-                    self.bitfield = new_bitfield
+                    self.handle_piece(info)
+                    self.cubic.now_wind -= 1
+                    self.cubic.cals_cwind()
         except Exception as e:
-            print(e)
+            logger.error(e)
+        except KeyboardInterrupt:
+            return
+
+    def request_piece_handle(self):
+        while not self.all_pieces_completed():
+            for chunk_num in range(self.end_chunk_num + 1):
+                piece_index = chunk_num // self.chunks_per_piece
+                piece = self.pieces[piece_index]
+                block_index = chunk_num % self.chunks_per_piece
+                if piece.blocks[block_index].state == State.FREE:
+                    continue
+                elif piece.blocks[block_index].state == State.PENDING:
+                    if time.time() - piece.blocks[block_index].last_seen > TIME_OUT:
+                        piece.blocks[block_index].state = State.FREE
+                        piece.blocks[block_index].last_seen = time.time()
+                        self.cubic.last_time_loss = time.time()
+                        self.cubic.cals_cwind()
+                    else:
+                        continue
+                elif piece.blocks[block_index].state == State.FREE:
+                    if self.cubic.now_wind <= self.cubic.cwind:
+                        self.cef_handle.send_interest(
+                            name=self.name,
+                            chunk_num=chunk_num
+                        )
+                        self.cubic.now_wind += 1
+
+                time.sleep(1)
+
+    def handle_piece(self, info):
+        payload = info.payload
+        chunk_num = info.chunk_num
+
+        piece_index = chunk_num // self.chunks_per_piece
+        offset = (chunk_num % self.chunks_per_piece) * CHUNK_SIZE
+        self.pieces[piece_index].set_block(offset=offset, data=payload)
+        if self.pieces[piece_index].are_all_blocks_full():
+            if self.pieces[piece_index].set_to_full():
+                self.complete_pieces += 1
+                self.pieces[piece_index].write_on_disk()
+
 
     def _generate_pieces(self) -> List[Piece]:
         """
@@ -166,67 +165,6 @@ class BitTorrent:
                 pieces.append(Piece(i, self.info.piece_length, self.info.pieces[start:end], self.file_path))
 
         return pieces
-
-    def request_piece(self, piece: Piece):
-
-        log(f"{piece.piece_index}, start")
-        name = self.name + str(piece.piece_index)
-
-        handle = cefpyco.CefpycoHandle(enable_log=False)
-        handle.begin()
-
-        handle.send_interest(name=name, chunk_num=0)
-        log(f"{piece.piece_index}, Interest, {0}")
-
-        try:
-            packet = handle.receive()
-        except Exception as e:
-            raise e
-        log(f"{piece.piece_index}, Data, {packet.chunk_num}")
-        end_chunk_num = packet.end_chunk_num
-
-        def send_interest():
-            for chunk_num, block in enumerate(piece.blocks):
-                if block.state == State.FULL:
-                    continue
-                handle.send_interest(name=name, chunk_num=chunk_num)
-                log(f"{piece.piece_index}, Interest, {chunk_num}")
-
-        send_interest()
-
-        try:
-            while True:
-                packet = handle.receive()
-                if packet.is_failed and packet.name != name:
-                    send_interest()
-
-                if packet.is_succeeded and packet.is_data:
-                    # TODO データを受信した際の処理
-                    log(f"{piece.piece_index}, Data, {packet.chunk_num}")
-                    payload = packet.payload
-                    offset = packet.chunk_num * gv.CHUNK_SIZE
-
-                    if piece.set_block(offset=offset, data=payload):
-                        #complete_block.value += 1
-                        pass
-                    if piece.are_all_blocks_full():
-                        if piece.set_to_full():
-                            piece.write_on_disk()
-                            # self.pieces[piece_index].raw_data = b""
-                            log(f"{piece.piece_index}, complete")
-                            break
-                        else:
-                            #complete_block.value -= piece.number_of_blocks
-                            send_interest()
-
-        except KeyboardInterrupt:
-            return
-        except Exception as e:
-            print(e)
-            raise e
-        finally:
-            handle.end()
-        return piece
 
     def all_pieces_completed(self) -> bool:
         for piece in self.pieces:
