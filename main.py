@@ -19,7 +19,7 @@ def main():
     
     torrent = Torrent(path)
     bp = b.BitTorrent(torrent)
-    bp.start()
+    bp.run()
 
 
 if __name__ == "__main__":
