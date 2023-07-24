@@ -8,11 +8,11 @@ from src.domain.entity.torrent import Torrent
 def main():
 
     paths = [
-        "128MB.torrent",
-        "256MB.torrent",
-        "512MB.torrent",
-        "1024MB.torrent",
-        "2048MB.torrent",
+        "128MB.dummy.torrent",
+        "256MB.dummy.torrent",
+        "512MB.dummy.torrent",
+        "1024MB.dummy.torrent",
+        "2048MB.dummy.torrent",
     ]
     gv.EVALUATION_PATH = gv.EVALUATION_PATH + paths[int(sys.argv[1])]
     path = gv.TORRENT_FILE_PATH + paths[int(sys.argv[1])]
