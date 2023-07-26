@@ -131,7 +131,9 @@ class BitTorrent:
                         )
                         piece.blocks[block_index].last_seen = time.time()
                         self.cubic.now_wind += 1
-                        logger.debug(f"Send interest: {piece_index}, {chunk_num}")
+                        # logger.debug(f"Send interest: {piece_index}, {chunk_num}")
+                    else:
+                        break
 
             logger.debug(f"{self.cubic.cwind} {self.cubic.now_wind} {self.cubic.w_max} {self.cubic.calc_k()}")
             time.sleep(1)
