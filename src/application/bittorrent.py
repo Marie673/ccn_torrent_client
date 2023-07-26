@@ -111,6 +111,7 @@ class BitTorrent:
 
     def request_piece_handle(self):
         while not self.all_pieces_completed():
+            logger.debug("test")
             for chunk_num in range(self.end_chunk_num + 1):
                 piece_index = chunk_num // self.chunks_per_piece
                 piece = self.pieces[piece_index]
