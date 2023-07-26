@@ -78,21 +78,21 @@ class BitTorrent:
         self.cubic = Cubic()
 
     async def run(self):
-        task = asyncio.create_task(self.listener())
+        listener_thread = Thread(target=self.listener())
+        listener_thread.run()
 
         try:
-            await self.request_piece_handle()
+            request_thread = Thread(target=self.request_piece_handle())
         except Exception as e:
             logger.error(e)
         except KeyboardInterrupt:
             return
         finally:
-            await task
+            listener_thread.join()
 
-    async def listener(self):
+    def listener(self):
         try:
             while not self.all_pieces_completed():
-                await asyncio.sleep(0)
                 info = self.cef_handle.receive()
                 logger.debug("listener test")
                 if info.is_succeeded and info.is_data:
@@ -113,12 +113,12 @@ class BitTorrent:
         except KeyboardInterrupt:
             return
 
-    async def request_piece_handle(self):
+    def request_piece_handle(self):
         while not self.all_pieces_completed():
             logger.debug("request_piece_handle")
             for chunk_num in range(self.end_chunk_num + 1):
                 logger.debug("test")
-                await asyncio.sleep(0)
+                time.sleep(0)
                 piece_index = chunk_num // self.chunks_per_piece
                 piece = self.pieces[piece_index]
                 block_index = chunk_num % self.chunks_per_piece
@@ -143,7 +143,7 @@ class BitTorrent:
                         logger.debug(f"Send interest: {piece_index}, {chunk_num}")
                         self.cubic.now_wind += 1
 
-            await asyncio.sleep(1)
+            time.sleep(1)
 
     def handle_piece(self, info):
         payload = info.payload
