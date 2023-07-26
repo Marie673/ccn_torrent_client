@@ -115,7 +115,6 @@ class BitTorrent:
     def request_piece_handle(self):
         logger.debug("requester is start")
         while not self.all_pieces_completed():
-            logger.debug("request_piece_handle")
             self.check_chunk_state()
             for chunk_num in range(self.end_chunk_num + 1):
 
@@ -146,6 +145,7 @@ class BitTorrent:
             block_index = chunk_num % self.chunks_per_piece
 
             if piece.blocks[block_index].state == State.PENDING:
+                logger.debug(f"{time.time() - piece.blocks[block_index].last_seen}")
                 if time.time() - piece.blocks[block_index].last_seen > TIME_OUT:
                     piece.blocks[block_index].state = State.FREE
                     piece.blocks[block_index].last_seen = time.time()
