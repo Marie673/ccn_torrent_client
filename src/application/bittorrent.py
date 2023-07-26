@@ -146,14 +146,11 @@ class BitTorrent:
             block_index = chunk_num % self.chunks_per_piece
 
             if piece.blocks[block_index].state == State.PENDING:
-                logger.debug(f"{time.time() - piece.blocks[block_index].last_seen}")
                 if time.time() - piece.blocks[block_index].last_seen > TIME_OUT:
                     piece.blocks[block_index].state = State.FREE
                     piece.blocks[block_index].last_seen = time.time()
                     self.cubic.last_time_loss = time.time()
                     self.cubic.w_max = self.cubic.cwind
-                    logger.debug("test")
-                    time.sleep(2)
                 else:
                     pending_chunk_num += 1
 
