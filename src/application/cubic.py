@@ -1,3 +1,5 @@
+import math
+
 import time
 
 
@@ -20,4 +22,4 @@ class Cubic:
         return self.cwind
 
     def calc_k(self):
-        return (self.w_max * self.B / self.C) ** (1/3)
+        return math.pow(self.w_max * self.B / self.C, 1/3)
