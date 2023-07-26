@@ -113,7 +113,9 @@ class BitTorrent:
             return
 
     async def request_piece_handle(self):
+        logger.debug("request_piece_handle  ::")
         while not self.all_pieces_completed():
+            logger.debug("request_piece_handle")
             for chunk_num in range(self.end_chunk_num + 1):
                 await asyncio.sleep(0)
                 piece_index = chunk_num // self.chunks_per_piece
