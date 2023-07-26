@@ -136,8 +136,6 @@ class BitTorrent:
     def check_chunk_state(self):
         pending_chunk_num = 0
         for chunk_num in range(self.end_chunk_num + 1):
-            logger.debug("test")
-            time.sleep(0)
             piece_index = chunk_num // self.chunks_per_piece
             piece = self.pieces[piece_index]
             block_index = chunk_num % self.chunks_per_piece
