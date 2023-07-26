@@ -133,7 +133,7 @@ class BitTorrent:
                         self.cubic.now_wind += 1
                         logger.debug(f"Send interest: {piece_index}, {chunk_num}")
 
-            logger.debug(f"{self.cubic.cwind} {self.cubic.now_wind}")
+            logger.debug(f"{self.cubic.cwind} {self.cubic.now_wind} {self.cubic.calc_k()}")
             time.sleep(0.5)
 
     def check_chunk_state(self):
