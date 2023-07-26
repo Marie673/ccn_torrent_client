@@ -21,7 +21,7 @@ from logger import logger
 CHUNK_SIZE = 1024 * 4
 CACHE_PATH = os.environ['HOME']+"/proxy_cache/"
 MAX_PEER_CONNECT = 1
-TIME_OUT = 4
+TIME_OUT = 4g
 EVALUATION = True
 EVALUATION_PATH = "/client/evaluation/ccn_client/test"
 
@@ -134,7 +134,7 @@ class BitTorrent:
                         logger.debug(f"Send interest: {piece_index}, {chunk_num}")
 
             logger.debug(f"{self.cubic.cwind} {self.cubic.now_wind} {self.cubic.w_max} {self.cubic.calc_k()}")
-            time.sleep(0.5)
+            time.sleep(1)
 
     def check_chunk_state(self):
         pending_chunk_num = 0
@@ -149,6 +149,8 @@ class BitTorrent:
                     piece.blocks[block_index].last_seen = time.time()
                     self.cubic.last_time_loss = time.time()
                     self.cubic.w_max = self.cubic.cwind
+                    logger.debug("test")
+                    time.sleep(2)
                 else:
                     pending_chunk_num += 1
 
