@@ -79,7 +79,7 @@ class BitTorrent:
 
     def run(self):
         listener_thread = Thread(target=self.listener())
-        listener_thread.run()
+        listener_thread.start()
 
         try:
             self.request_piece_handle()
