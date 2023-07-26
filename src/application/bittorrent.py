@@ -124,7 +124,7 @@ class BitTorrent:
                 block_index = chunk_num % self.chunks_per_piece
 
                 if piece.blocks[block_index].state == State.FREE:
-                    if self.cubic.now_wind <= self.cubic.cwind:
+                    if self.cubic.now_wind < self.cubic.cwind:
                         self.cef_handle.send_interest(
                             name=self.name,
                             chunk_num=chunk_num
