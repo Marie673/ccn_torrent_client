@@ -78,6 +78,7 @@ class BitTorrent:
         self.cubic = Cubic()
 
     def run(self):
+        logger.debug(self.name)
         listener_thread = Thread(target=self.listener())
         listener_thread.start()
 
