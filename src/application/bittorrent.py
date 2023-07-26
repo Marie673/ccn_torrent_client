@@ -77,7 +77,7 @@ class BitTorrent:
 
         self.cubic = Cubic()
 
-    async def run(self):
+    def run(self):
         listener_thread = Thread(target=self.listener())
         listener_thread.run()
 
