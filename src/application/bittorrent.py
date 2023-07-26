@@ -116,22 +116,12 @@ class BitTorrent:
         logger.debug("requester is start")
         while not self.all_pieces_completed():
             logger.debug("request_piece_handle")
+            self.check_chunk_state()
             for chunk_num in range(self.end_chunk_num + 1):
-                time.sleep(0)
+
                 piece_index = chunk_num // self.chunks_per_piece
                 piece = self.pieces[piece_index]
                 block_index = chunk_num % self.chunks_per_piece
-
-                if piece.blocks[block_index].state == State.FULL:
-                    continue
-                elif piece.blocks[block_index].state == State.PENDING:
-                    if time.time() - piece.blocks[block_index].last_seen > TIME_OUT:
-                        piece.blocks[block_index].state = State.FREE
-                        piece.blocks[block_index].last_seen = time.time()
-                        self.cubic.last_time_loss = time.time()
-                        self.cubic.cals_cwind()
-                    else:
-                        continue
 
                 if piece.blocks[block_index].state == State.FREE:
                     if self.cubic.now_wind <= self.cubic.cwind:
@@ -141,7 +131,6 @@ class BitTorrent:
                         )
                         logger.debug(f"Send interest: {piece_index}, {chunk_num}")
                         self.cubic.now_wind += 1
-            self.check_chunk_state()
             time.sleep(1)
 
     def check_chunk_state(self):
@@ -158,6 +147,7 @@ class BitTorrent:
                     piece.blocks[block_index].state = State.FREE
                     piece.blocks[block_index].last_seen = time.time()
                     self.cubic.last_time_loss = time.time()
+                    self.cubic.w_max = self.cubic.cwind
                 else:
                     pending_chunk_num += 1
 
