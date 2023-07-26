@@ -106,8 +106,6 @@ class BitTorrent:
                         continue
 
                     self.handle_piece(info)
-                    self.cubic.now_wind -= 1
-                    self.cubic.cals_cwind()
                     self.print_progress()
         except Exception as e:
             logger.error(e)
@@ -143,8 +141,28 @@ class BitTorrent:
                         )
                         logger.debug(f"Send interest: {piece_index}, {chunk_num}")
                         self.cubic.now_wind += 1
-
+            self.check_chunk_state()
             time.sleep(1)
+
+    def check_chunk_state(self):
+        pending_chunk_num = 0
+        for chunk_num in range(self.end_chunk_num + 1):
+            logger.debug("test")
+            time.sleep(0)
+            piece_index = chunk_num // self.chunks_per_piece
+            piece = self.pieces[piece_index]
+            block_index = chunk_num % self.chunks_per_piece
+
+            if piece.blocks[block_index].state == State.PENDING:
+                if time.time() - piece.blocks[block_index].last_seen > TIME_OUT:
+                    piece.blocks[block_index].state = State.FREE
+                    piece.blocks[block_index].last_seen = time.time()
+                    self.cubic.last_time_loss = time.time()
+                else:
+                    pending_chunk_num += 1
+
+        self.cubic.now_wind = pending_chunk_num
+        self.cubic.cals_cwind()
 
     def handle_piece(self, info):
         payload = info.payload
