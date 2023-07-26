@@ -83,6 +83,7 @@ class BitTorrent:
 
         try:
             request_thread = Thread(target=self.request_piece_handle())
+            request_thread.run()
         except Exception as e:
             logger.error(e)
         except KeyboardInterrupt:
