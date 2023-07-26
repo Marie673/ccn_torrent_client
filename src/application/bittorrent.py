@@ -81,8 +81,7 @@ class BitTorrent:
         task = asyncio.create_task(self.listener())
 
         try:
-            logger.debug("main test")
-            self.request_piece_handle()
+            await self.request_piece_handle()
         except Exception as e:
             logger.error(e)
         except KeyboardInterrupt:
@@ -113,11 +112,10 @@ class BitTorrent:
         except KeyboardInterrupt:
             return
 
-    def request_piece_handle(self):
-        logger.debug("trewst")
+    async def request_piece_handle(self):
         while not self.all_pieces_completed():
-            logger.debug("test")
             for chunk_num in range(self.end_chunk_num + 1):
+                await asyncio.sleep(0)
                 piece_index = chunk_num // self.chunks_per_piece
                 piece = self.pieces[piece_index]
                 block_index = chunk_num % self.chunks_per_piece
