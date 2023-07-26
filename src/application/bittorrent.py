@@ -91,6 +91,7 @@ class BitTorrent:
             listener_thread.join()
 
     def listener(self):
+        logger.debug("listener is start")
         try:
             while not self.all_pieces_completed():
                 info = self.cef_handle.receive()
@@ -112,6 +113,7 @@ class BitTorrent:
             return
 
     def request_piece_handle(self):
+        logger.debug("requester is start")
         while not self.all_pieces_completed():
             logger.debug("request_piece_handle")
             for chunk_num in range(self.end_chunk_num + 1):
