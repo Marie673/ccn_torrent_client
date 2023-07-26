@@ -92,6 +92,7 @@ class BitTorrent:
     async def listener(self):
         try:
             while not self.all_pieces_completed():
+                await asyncio.sleep(0)
                 info = self.cef_handle.receive()
                 logger.debug("listener test")
                 if info.is_succeeded and info.is_data:
@@ -113,7 +114,6 @@ class BitTorrent:
             return
 
     async def request_piece_handle(self):
-        logger.debug("request_piece_handle  ::")
         while not self.all_pieces_completed():
             logger.debug("request_piece_handle")
             for chunk_num in range(self.end_chunk_num + 1):
