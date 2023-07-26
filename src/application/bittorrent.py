@@ -78,9 +78,8 @@ class BitTorrent:
         self.cubic = Cubic()
 
     def run(self):
-        listener = threading.Thread(target=self.listener())
-        listener.start()
-        print("testtesttest")
+        task = asyncio.create_task(self.listener())
+
         try:
             logger.debug("main test")
             self.request_piece_handle()
@@ -89,9 +88,9 @@ class BitTorrent:
         except KeyboardInterrupt:
             return
         finally:
-            listener.join()
+            await task
 
-    def listener(self):
+    async def listener(self):
         try:
             while not self.all_pieces_completed():
                 info = self.cef_handle.receive()
