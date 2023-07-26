@@ -21,7 +21,7 @@ from logger import logger
 CHUNK_SIZE = 1024 * 4
 CACHE_PATH = os.environ['HOME']+"/proxy_cache/"
 MAX_PEER_CONNECT = 1
-TIME_OUT = 4g
+TIME_OUT = 4
 EVALUATION = True
 EVALUATION_PATH = "/client/evaluation/ccn_client/test"
 
