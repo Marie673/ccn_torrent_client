@@ -16,7 +16,7 @@ class Cubic:
 
     def cals_cwind(self):
         self.t = time.time() - self.last_time_loss
-        self.cwind = self.C * (self.t * 100 - self.calc_k()) ** 3 + self.w_max
+        self.cwind = self.C * (self.t / 100 - self.calc_k()) ** 3 + self.w_max
         return self.cwind
 
     def calc_k(self):
