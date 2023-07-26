@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import asyncio
+
 import sys
 import src.global_value as gv
 import src.application.bittorrent as b
@@ -19,7 +21,7 @@ def main():
     
     torrent = Torrent(path)
     bp = b.BitTorrent(torrent)
-    bp.run()
+    asyncio.run(bp.run())
 
 
 if __name__ == "__main__":

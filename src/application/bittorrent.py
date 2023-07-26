@@ -77,7 +77,7 @@ class BitTorrent:
 
         self.cubic = Cubic()
 
-    def run(self):
+    async def run(self):
         task = asyncio.create_task(self.listener())
 
         try:
