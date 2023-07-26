@@ -88,7 +88,8 @@ class BitTorrent:
         except KeyboardInterrupt:
             return
         finally:
-            listener.join()
+            pass
+            # listener.join()
 
     def listener(self):
         try:
