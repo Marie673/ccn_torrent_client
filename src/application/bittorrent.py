@@ -81,6 +81,7 @@ class BitTorrent:
         listener = threading.Thread(target=self.listener())
         listener.start()
         try:
+            logger.debug("main test")
             self.request_piece_handle()
         except Exception as e:
             logger.error(e)
