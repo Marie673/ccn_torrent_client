@@ -110,6 +110,7 @@ class BitTorrent:
             return
 
     def request_piece_handle(self):
+        logger.debug("trewst")
         while not self.all_pieces_completed():
             logger.debug("test")
             for chunk_num in range(self.end_chunk_num + 1):
