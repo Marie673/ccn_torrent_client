@@ -133,6 +133,7 @@ class BitTorrent:
                             name=self.name,
                             chunk_num=chunk_num
                         )
+                        logger.debug(f"Send interest: {piece_index}, {chunk_num}")
                         self.cubic.now_wind += 1
 
             time.sleep(1)
