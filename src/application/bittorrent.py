@@ -142,7 +142,7 @@ class BitTorrent:
                         logger.debug(f"Send interest: {piece_index}, {chunk_num}")
                         self.cubic.now_wind += 1
 
-            time.sleep(1)
+            await asyncio.sleep(1)
 
     def handle_piece(self, info):
         payload = info.payload
