@@ -115,7 +115,8 @@ class BitTorrent:
                 piece_index = chunk_num // self.chunks_per_piece
                 piece = self.pieces[piece_index]
                 block_index = chunk_num % self.chunks_per_piece
-                if piece.blocks[block_index].state == State.FREE:
+
+                if piece.blocks[block_index].state == State.FULL:
                     continue
                 elif piece.blocks[block_index].state == State.PENDING:
                     if time.time() - piece.blocks[block_index].last_seen > TIME_OUT:
@@ -125,7 +126,8 @@ class BitTorrent:
                         self.cubic.cals_cwind()
                     else:
                         continue
-                elif piece.blocks[block_index].state == State.FREE:
+
+                if piece.blocks[block_index].state == State.FREE:
                     if self.cubic.now_wind <= self.cubic.cwind:
                         self.cef_handle.send_interest(
                             name=self.name,
@@ -133,7 +135,7 @@ class BitTorrent:
                         )
                         self.cubic.now_wind += 1
 
-                time.sleep(1)
+            time.sleep(1)
 
     def handle_piece(self, info):
         payload = info.payload
