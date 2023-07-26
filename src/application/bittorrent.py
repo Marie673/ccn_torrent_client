@@ -80,6 +80,7 @@ class BitTorrent:
     def run(self):
         listener = threading.Thread(target=self.listener())
         listener.start()
+        print("testtesttest")
         try:
             logger.debug("main test")
             self.request_piece_handle()
@@ -88,8 +89,7 @@ class BitTorrent:
         except KeyboardInterrupt:
             return
         finally:
-            pass
-            # listener.join()
+            listener.join()
 
     def listener(self):
         try:
