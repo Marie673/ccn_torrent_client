@@ -1,3 +1,5 @@
+import asyncio
+
 import os
 import threading
 
@@ -92,6 +94,7 @@ class BitTorrent:
             while not self.all_pieces_completed():
                 info = self.cef_handle.receive()
                 logger.debug("listener test")
+                await asyncio.sleep(0)
                 if info.is_succeeded and info.is_data:
                     prefix = info.name.split('/')
                     if prefix[0] != 'ccnx:':
