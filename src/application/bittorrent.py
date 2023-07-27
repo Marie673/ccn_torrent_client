@@ -32,7 +32,7 @@ class CefListener(Thread):
     def run(self):
         try:
             while not self.bittorrent.all_pieces_completed():
-                info = self.cef_handle.receive()
+                info = self.cef_handle.receive(timeout_ms=1000)
                 if info.is_succeeded and info.is_data:
                     prefix = info.name.split('/')
                     if prefix[0] != 'ccnx:':
@@ -98,7 +98,7 @@ class BitTorrent:
 
         self.name = "ccnx:/BitTorrent/" + self.info_hash
 
-        self.cef_handle = cefpyco.CefpycoHandle(timeout_ms=1000)
+        self.cef_handle = cefpyco.CefpycoHandle()
         self.cef_handle.begin()
 
         self.cubic = Cubic()
