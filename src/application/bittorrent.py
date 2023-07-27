@@ -207,7 +207,7 @@ class BitTorrent:
                 if block.state == State.FULL:
                     block_num += 1
 
-        progress = (block_num / self.end_chunk_num + 1) * 100
+        progress = (block_num / (self.end_chunk_num + 1)) * 100
         print(f"[piece: {self.complete_pieces} / {self.number_of_pieces}]"
               f"[block: {block_num} / {self.end_chunk_num + 1}, "
               f"{progress:.2f}%]")
