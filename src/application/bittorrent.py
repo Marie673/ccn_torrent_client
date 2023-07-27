@@ -46,7 +46,7 @@ class CefListener(Thread):
                         continue
 
                     self.bittorrent.handle_piece(info)
-                    self.bittorrent.print_progress()
+                    # self.bittorrent.print_progress()
         except Exception as e:
             logger.error(e)
         except KeyboardInterrupt:
@@ -139,6 +139,7 @@ class BitTorrent:
                         break
 
             logger.debug(f"c_window: {int(self.cubic.cwind)}")
+            self.print_progress()
             time.sleep(1)
 
     def check_chunk_state(self):
@@ -200,7 +201,13 @@ class BitTorrent:
         return True
 
     def print_progress(self):
-        progress = (self.compete_block / self.end_chunk_num) * 100
+        block_num = 0
+        for piece in self.pieces:
+            for block in piece.blocks:
+                if block.state == State.FULL:
+                    block_num += 1
+
+        progress = (block_num / self.end_chunk_num + 1) * 100
         print(f"[piece: {self.complete_pieces} / {self.number_of_pieces}]"
-              f"[block: {self.compete_block} / {self.end_chunk_num}, "
+              f"[block: {block_num} / {self.end_chunk_num + 1}, "
               f"{progress:.2f}%]")
