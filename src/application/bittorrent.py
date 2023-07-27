@@ -98,7 +98,7 @@ class BitTorrent:
 
         self.name = "ccnx:/BitTorrent/" + self.info_hash
 
-        self.cef_handle = cefpyco.CefpycoHandle()
+        self.cef_handle = cefpyco.CefpycoHandle(timeout=1)
         self.cef_handle.begin()
 
         self.cubic = Cubic()
@@ -117,6 +117,7 @@ class BitTorrent:
 
     def request_piece_handle(self):
         logger.debug("requester is start")
+        last_time = time.time()
         while not self.all_pieces_completed():
             self.check_chunk_state()
             for chunk_num in range(self.end_chunk_num + 1):
@@ -138,8 +139,10 @@ class BitTorrent:
                     else:
                         break
 
-            logger.debug(f"c_window: {int(self.cubic.cwind)}")
-            self.print_progress()
+            if time.time() - last_time > 1:
+                logger.debug(f"c_window: {int(self.cubic.cwind)}")
+                self.print_progress()
+                last_time = time.time()
 
     def check_chunk_state(self):
         pending_chunk_num = 0
