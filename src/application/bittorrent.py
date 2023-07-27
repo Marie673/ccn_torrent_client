@@ -34,13 +34,15 @@ class CefListener(Thread):
             while not self.bittorrent.all_pieces_completed():
                 info = self.cef_handle.receive()
                 if info.is_succeeded and info.is_data:
-                    logger.debug("test")
                     prefix = info.name.split('/')
                     if prefix[0] != 'ccnx:':
+                        logger.debug("incorrect prefix")
                         continue
                     if prefix[1] != 'BitTorrent':
+                        logger.debug("incorrect protocol")
                         continue
                     if prefix[2] != self.bittorrent.info_hash:
+                        logger.debug("incorrect info_hash")
                         continue
 
                     self.bittorrent.handle_piece(info)
