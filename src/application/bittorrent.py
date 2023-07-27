@@ -140,7 +140,6 @@ class BitTorrent:
 
             logger.debug(f"c_window: {int(self.cubic.cwind)}")
             self.print_progress()
-            time.sleep(0.1)
 
     def check_chunk_state(self):
         pending_chunk_num = 0
