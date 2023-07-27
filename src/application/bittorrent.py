@@ -27,8 +27,7 @@ class CefListener(Thread):
     def __init__(self, bittorrent):
         super().__init__()
         self.bittorrent = bittorrent
-        self.cef_handle = cefpyco.CefpycoHandle()
-        self.cef_handle.begin()
+        self.cef_handle = bittorrent.cef_handle
 
     def run(self):
         try:
