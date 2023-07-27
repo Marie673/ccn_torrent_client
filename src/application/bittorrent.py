@@ -98,7 +98,7 @@ class BitTorrent:
 
         self.name = "ccnx:/BitTorrent/" + self.info_hash
 
-        self.cef_handle = cefpyco.CefpycoHandle(timeout=1)
+        self.cef_handle = cefpyco.CefpycoHandle(timeout_ms=1000)
         self.cef_handle.begin()
 
         self.cubic = Cubic()
