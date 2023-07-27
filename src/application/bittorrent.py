@@ -174,11 +174,15 @@ class BitTorrent:
 
         piece_index = chunk_num // self.chunks_per_piece
         offset = (chunk_num % self.chunks_per_piece) * CHUNK_SIZE
-        self.pieces[piece_index].set_block(offset=offset, data=payload)
-        if self.pieces[piece_index].are_all_blocks_full():
-            if self.pieces[piece_index].set_to_full():
+        piece = self.pieces[piece_index]
+        if piece.is_full:
+            return
+
+        piece.set_block(offset=offset, data=payload)
+        if piece.are_all_blocks_full():
+            if piece.set_to_full():
                 self.complete_pieces += 1
-                self.pieces[piece_index].write_on_disk()
+                piece.write_on_disk()
 
     def _generate_pieces(self) -> List[Piece]:
         """
