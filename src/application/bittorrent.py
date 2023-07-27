@@ -28,10 +28,11 @@ class CefListener(Thread):
         super().__init__()
         self.bittorrent = bittorrent
         self.cef_handle = bittorrent.cef_handle
+        self.health = True
 
     def run(self):
         try:
-            while not self.bittorrent.all_pieces_completed():
+            while (not self.bittorrent.all_pieces_completed()) and self.health:
                 info = self.cef_handle.receive(timeout_ms=1000)
                 if info.is_succeeded and info.is_data:
                     prefix = info.name.split('/')
@@ -115,6 +116,7 @@ class BitTorrent:
         except KeyboardInterrupt:
             return
         finally:
+            listener.health = False
             listener.join()
 
     def request_piece_handle(self):
