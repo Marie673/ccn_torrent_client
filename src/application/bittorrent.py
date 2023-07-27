@@ -97,6 +97,7 @@ class BitTorrent:
         self.complete_pieces = 0
 
         self.name = "ccnx:/BitTorrent/" + self.info_hash
+        self.started_time = 0
 
         self.cef_handle = cefpyco.CefpycoHandle()
         self.cef_handle.begin()
@@ -106,6 +107,7 @@ class BitTorrent:
     def run(self):
         listener = CefListener(self)
         listener.start()
+        self.started_time = time.time()
         try:
             self.request_piece_handle()
         except Exception as e:
@@ -212,4 +214,4 @@ class BitTorrent:
         progress = (block_num / (self.end_chunk_num + 1)) * 100
         print(f"[piece: {self.complete_pieces} / {self.number_of_pieces}]"
               f"[block: {block_num} / {self.end_chunk_num + 1}, "
-              f"{progress:.2f}%]")
+              f"{progress:.2f}%], Throughput: {block_num * CHUNK_SIZE * 8 / (time.time() - self.started_time)}")
