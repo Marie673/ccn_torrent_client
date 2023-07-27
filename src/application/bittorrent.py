@@ -1,5 +1,3 @@
-import asyncio
-
 import os
 import threading
 
@@ -25,6 +23,33 @@ TIME_OUT = 4
 EVALUATION = True
 EVALUATION_PATH = "/client/evaluation/ccn_client/test"
 
+
+class CefListener(Thread):
+    def __init__(self, bittorrent):
+        super().__init__()
+        self.bittorrent = bittorrent
+        self.cef_handle = cefpyco.CefpycoHandle()
+        self.cef_handle.begin()
+
+    def run(self):
+        try:
+            while not self.bittorrent.all_pieces_completed():
+                info = self.cef_handle.receive()
+                if info.is_succeeded and info.is_data:
+                    prefix = info.name.split('/')
+                    if prefix[0] != 'ccnx:':
+                        continue
+                    if prefix[1] != 'BitTorrent':
+                        continue
+                    if prefix[2] != self.bittorrent.info_hash:
+                        continue
+
+                    self.bittorrent.handle_piece(info)
+                    self.bittorrent.print_progress()
+        except Exception as e:
+            logger.error(e)
+        except KeyboardInterrupt:
+            return
 
 
 class BitTorrent:
@@ -78,10 +103,8 @@ class BitTorrent:
         self.cubic = Cubic()
 
     def run(self):
-        logger.debug(self.name)
-        listener_thread = Thread(target=self.listener())
-        listener_thread.start()
-
+        listener = CefListener(self)
+        listener.start()
         try:
             self.request_piece_handle()
         except Exception as e:
@@ -89,29 +112,7 @@ class BitTorrent:
         except KeyboardInterrupt:
             return
         finally:
-            listener_thread.join()
-
-    def listener(self):
-        logger.debug("listener is start")
-        try:
-            while not self.all_pieces_completed():
-                info = self.cef_handle.receive()
-                logger.debug("listener test")
-                if info.is_succeeded and info.is_data:
-                    prefix = info.name.split('/')
-                    if prefix[0] != 'ccnx:':
-                        continue
-                    if prefix[1] != 'BitTorrent':
-                        continue
-                    if prefix[2] != self.info_hash:
-                        continue
-
-                    self.handle_piece(info)
-                    self.print_progress()
-        except Exception as e:
-            logger.error(e)
-        except KeyboardInterrupt:
-            return
+            listener.join()
 
     def request_piece_handle(self):
         logger.debug("requester is start")
@@ -169,7 +170,6 @@ class BitTorrent:
             if self.pieces[piece_index].set_to_full():
                 self.complete_pieces += 1
                 self.pieces[piece_index].write_on_disk()
-
 
     def _generate_pieces(self) -> List[Piece]:
         """
