@@ -136,7 +136,7 @@ class BitTorrent:
                     else:
                         break
 
-            logger.debug(f"{self.cubic.cwind} {self.cubic.now_wind}")
+            logger.debug(f"c_window: {int(self.cubic.cwind)}")
             time.sleep(1)
 
     def check_chunk_state(self):
