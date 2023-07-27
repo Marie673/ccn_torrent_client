@@ -65,7 +65,7 @@ class BitTorrent:
         self.compete_block = 0
         self.torrent = torrent
         self.info: Info = torrent.info
-        self.info_hash = torrent.info_hash
+        self.info_hash = str(torrent.info_hash.hex())
         self.file_path = CACHE_PATH + self.info.name
         try:
             os.makedirs(self.file_path)
@@ -96,7 +96,7 @@ class BitTorrent:
         self.pieces = self._generate_pieces()
         self.complete_pieces = 0
 
-        self.name = "ccnx:/BitTorrent/" + str(self.info_hash.hex())
+        self.name = "ccnx:/BitTorrent/" + self.info_hash
 
         self.cef_handle = cefpyco.CefpycoHandle()
         self.cef_handle.begin()
@@ -161,7 +161,7 @@ class BitTorrent:
         self.cubic.cals_cwind()
 
     def handle_piece(self, info):
-        logger.debug("get piece data")
+        # logger.debug("get piece data")
         payload = info.payload
         chunk_num = info.chunk_num
 
