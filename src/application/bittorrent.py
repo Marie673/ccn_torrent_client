@@ -42,7 +42,7 @@ class CefListener(Thread):
                         logger.debug("incorrect protocol")
                         continue
                     if prefix[2] != self.bittorrent.info_hash:
-                        logger.debug("incorrect info_hash")
+                        logger.debug(f"incorrect info_hash: {prefix[2]}:{self.bittorrent.info_hash}")
                         continue
 
                     self.bittorrent.handle_piece(info)
