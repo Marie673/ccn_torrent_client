@@ -214,4 +214,5 @@ class BitTorrent:
         progress = (block_num / (self.end_chunk_num + 1)) * 100
         print(f"[piece: {self.complete_pieces} / {self.number_of_pieces}]"
               f"[block: {block_num} / {self.end_chunk_num + 1}, "
-              f"{progress:.2f}%], Throughput: {block_num * CHUNK_SIZE * 8 / (time.time() - self.started_time)}")
+              f"{progress:.2f}%], "
+              f"Throughput: {(block_num * CHUNK_SIZE * 8 / (time.time() - self.started_time)) / 1024 ** 2 }Mbps")
