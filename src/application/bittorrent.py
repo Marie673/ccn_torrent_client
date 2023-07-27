@@ -33,7 +33,6 @@ class CefListener(Thread):
         try:
             while not self.bittorrent.all_pieces_completed():
                 info = self.cef_handle.receive()
-                logger.debug(info)
                 if info.is_succeeded and info.is_data:
                     prefix = info.name.split('/')
                     if prefix[0] != 'ccnx:':
