@@ -1,5 +1,4 @@
 import os
-import threading
 
 import cefpyco
 import time
@@ -10,7 +9,7 @@ from src.domain.entity.piece.piece import Piece
 from src.domain.entity.piece.block import State
 from src.domain.entity.torrent import Torrent, Info, FileMode
 from typing import List
-from threading import Lock, Thread
+from threading import Thread
 import datetime
 
 
@@ -133,11 +132,11 @@ class BitTorrent:
                         piece.blocks[block_index].state = State.PENDING
                         piece.blocks[block_index].last_seen = time.time()
                         self.cubic.now_wind += 1
-                        logger.debug(f"Send interest: {piece_index}, {chunk_num}")
+                        # logger.debug(f"Send interest: {piece_index}, {chunk_num}")
                     else:
                         break
 
-            # logger.debug(f"{self.cubic.cwind} {self.cubic.now_wind} {self.cubic.w_max} {self.cubic.calc_k()}")
+            logger.debug(f"{self.cubic.cwind} {self.cubic.now_wind}")
             time.sleep(1)
 
     def check_chunk_state(self):
@@ -160,6 +159,7 @@ class BitTorrent:
         self.cubic.cals_cwind()
 
     def handle_piece(self, info):
+        logger.debug("get piece data")
         payload = info.payload
         chunk_num = info.chunk_num
 
