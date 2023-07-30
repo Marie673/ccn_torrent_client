@@ -79,7 +79,7 @@ class BitTorrent:
         self.complete_pieces = 0
         self.started_time = 0
 
-    async def run(self):
+    def run(self):
         loop = asyncio.get_event_loop()
         executor = concurrent.futures.ProcessPoolExecutor()
         queue = asyncio.Queue
