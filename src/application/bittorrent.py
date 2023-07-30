@@ -1,3 +1,5 @@
+import asyncio
+import concurrent.futures
 import os
 
 import cefpyco
@@ -9,6 +11,7 @@ from src.domain.entity.piece.piece import Piece
 from src.domain.entity.piece.block import State
 from src.domain.entity.torrent import Torrent, Info, FileMode
 from typing import List
+from multiprocessing import Process
 from threading import Thread
 import datetime
 
@@ -23,37 +26,6 @@ EVALUATION = True
 EVALUATION_PATH = "/client/evaluation/ccn_client/test"
 
 
-class CefListener(Thread):
-    def __init__(self, bittorrent):
-        super().__init__()
-        self.bittorrent = bittorrent
-        self.cef_handle = bittorrent.cef_handle
-        self.health = True
-
-    def run(self):
-        try:
-            while (not self.bittorrent.all_pieces_completed()) and self.health:
-                info = self.cef_handle.receive(timeout_ms=1000)
-                if info.is_succeeded and info.is_data:
-                    prefix = info.name.split('/')
-                    if prefix[0] != 'ccnx:':
-                        logger.debug("incorrect prefix")
-                        continue
-                    if prefix[1] != 'BitTorrent':
-                        logger.debug("incorrect protocol")
-                        continue
-                    if prefix[2] != self.bittorrent.info_hash:
-                        logger.debug(f"incorrect info_hash: {prefix[2]}:{self.bittorrent.info_hash}")
-                        continue
-
-                    self.bittorrent.handle_piece(info)
-                    # self.bittorrent.print_progress()
-        except Exception as e:
-            logger.error(e)
-        except KeyboardInterrupt:
-            return
-
-
 class BitTorrent:
     def __init__(self, torrent: Torrent):
         """
@@ -63,11 +35,13 @@ class BitTorrent:
         ↓
         CCN Data受信
         """
-        self.compete_block = 0
         self.torrent = torrent
         self.info: Info = torrent.info
         self.info_hash = str(torrent.info_hash.hex())
         self.file_path = CACHE_PATH + self.info.name
+
+        self.name = "ccnx:/BitTorrent/" + self.info_hash
+
         try:
             os.makedirs(self.file_path)
         except Exception as e:
@@ -95,19 +69,22 @@ class BitTorrent:
 
         self.bitfield: bitstring.BitArray = bitstring.BitArray(self.number_of_pieces)
         self.pieces = self._generate_pieces()
-        self.complete_pieces = 0
-
-        self.name = "ccnx:/BitTorrent/" + self.info_hash
-        self.started_time = 0
 
         self.cef_handle = cefpyco.CefpycoHandle()
         self.cef_handle.begin()
 
         self.cubic = Cubic()
 
-    def run(self):
-        listener = CefListener(self)
-        listener.start()
+        self.compete_block = 0
+        self.complete_pieces = 0
+        self.started_time = 0
+
+    async def run(self):
+        loop = asyncio.get_event_loop()
+        executor = concurrent.futures.ProcessPoolExecutor()
+        queue = asyncio.Queue
+
+        future = loop.run_in_executor(executor, self.cef_listener)
         self.started_time = time.time()
         try:
             self.request_piece_handle()
@@ -116,8 +93,31 @@ class BitTorrent:
         except KeyboardInterrupt:
             return
         finally:
-            listener.health = False
-            listener.join()
+            await future
+
+    def cef_listener(self):
+        try:
+            while not self.all_pieces_completed():
+                info = self.cef_handle.receive(timeout_ms=4000)
+                if info.is_succeeded and info.is_data:
+                    prefix = info.name.split('/')
+                    if prefix[0] != 'ccnx:':
+                        logger.debug("incorrect prefix")
+                        continue
+                    if prefix[1] != 'BitTorrent':
+                        logger.debug("incorrect protocol")
+                        continue
+                    if prefix[2] != self.info_hash:
+                        logger.debug(f"incorrect info_hash: {prefix[2]}:{self.info_hash}")
+                        continue
+
+                    # self.queue.put(info)
+                    self.handle_piece(info)
+                    # self.bittorrent.print_progress()
+        except Exception as e:
+            logger.error(e)
+        except KeyboardInterrupt:
+            return
 
     def request_piece_handle(self):
         logger.debug("requester is start")
