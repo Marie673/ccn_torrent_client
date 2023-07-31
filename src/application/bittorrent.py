@@ -176,7 +176,6 @@ class BitTorrent:
                     pending_chunk_num += 1
 
         self.cubic.now_wind = pending_chunk_num
-        self.cubic.cals_cwind()
 
     def handle_piece(self, info):
         # logger.debug("get piece data")
