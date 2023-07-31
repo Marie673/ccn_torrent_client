@@ -45,15 +45,15 @@ class BitTorrent :
 
         self.name = "ccnx:/BitTorrent/" + self.info_hash
 
-        try :
+        try:
             os.makedirs(self.file_path)
-        except Exception as e :
+        except Exception as e:
             logger.error(e)
 
         # number_of_pieces の計算
-        if torrent.file_mode == FileMode.single_file :
+        if torrent.file_mode == FileMode.single_file:
             self.number_of_pieces = int(self.info.length / self.info.piece_length)
-        else :
+        else:
             length: int = 0
             for file in self.info.files :
                 length += file.length
@@ -61,9 +61,9 @@ class BitTorrent :
 
         # 1ピース当たりのチャンク数
         # ピースの最後を表現するときに、チャンクサイズで余りが出ても次のピースデータを含めない.
-        if self.info.piece_length % CHUNK_SIZE == 0 :
+        if self.info.piece_length % CHUNK_SIZE == 0:
             self.chunks_per_piece = self.info.piece_length // CHUNK_SIZE
-        else :
+        else:
             self.chunks_per_piece = (self.info.piece_length // CHUNK_SIZE) + 1
 
         # end_chunk_numの計算.
@@ -104,7 +104,7 @@ class BitTorrent :
 
     def cef_listener(self):
         while not self.all_pieces_completed():
-            read = self.cef_handle.sock
+            read = self.cef_handle.handler.sock
             read_list, _, _ = select.select(read, [], [], 60)
 
             def read_from_socket(sock):
