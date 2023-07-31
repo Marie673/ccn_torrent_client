@@ -137,9 +137,9 @@ class BitTorrent:
             # ここでqueueの状態を監視しないとサイズが膨れ上がる
             for chunk_num in range(self.end_chunk_num + 1):
                 while queue.qsize() > 0:
-                    logger.debug(queue)
                     info = queue.get()
                     # logger.debug(f"{info.name} {info.chunk_num}")
+                    logger.debug(f"{queue.qsize()}")
                     self.handle_piece(info)
 
                 piece_index = chunk_num // self.chunks_per_piece
