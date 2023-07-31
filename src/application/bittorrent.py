@@ -11,7 +11,7 @@ from src.domain.entity.piece.piece import Piece
 from src.domain.entity.piece.block import State
 from src.domain.entity.torrent import Torrent, Info, FileMode
 from typing import List
-from multiprocessing import Process
+import multiprocessing
 from threading import Thread
 import datetime
 
@@ -83,7 +83,7 @@ class BitTorrent:
         loop = asyncio.get_event_loop()
         executor = concurrent.futures.ThreadPoolExecutor()
         # executor = concurrent.futures.ProcessPoolExecutor()
-        queue = asyncio.Queue()
+        queue = multiprocessing.Queue()
 
         try:
             future = loop.run_in_executor(executor, self.cef_listener, queue)
