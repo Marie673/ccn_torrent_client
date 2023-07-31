@@ -142,11 +142,9 @@ class BitTorrent:
                     # logger.debug(f"{queue.qsize()}")
                     self.handle_piece(info)
 
-                logger.debug(f"start {time.time()}")
                 piece_index = chunk_num // self.chunks_per_piece
                 piece = self.pieces[piece_index]
                 block_index = chunk_num % self.chunks_per_piece
-                logger.debug(f"end {time.time()}")
 
                 self.cubic.cals_cwind()
                 if not self.cubic.now_wind < 5000:
@@ -186,7 +184,7 @@ class BitTorrent:
         self.cubic.now_wind = pending_chunk_num
 
     def handle_piece(self, info):
-        # logger.debug("get piece data")
+        logger.debug(f"start {time.time()}")
         payload = info.payload
         chunk_num = info.chunk_num
 
@@ -202,6 +200,7 @@ class BitTorrent:
                 self.bitfield[piece_index] = 1
                 self.complete_pieces += 1
                 piece.write_on_disk()
+        logger.debug(f"end {time.time()}")
 
     def _generate_pieces(self) -> List[Piece]:
         """
