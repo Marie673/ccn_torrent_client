@@ -118,7 +118,7 @@ class BitTorrent:
                     if prefix[2] != self.info_hash:
                         logger.debug(f"incorrect info_hash: {prefix[2]}:{self.info_hash}")
                         continue
-
+                    logger.debug(f"{info.name}, {info.chunk_num}")
                     queue.put(info)
                     # self.handle_piece(info)
                     # self.bittorrent.print_progress()
