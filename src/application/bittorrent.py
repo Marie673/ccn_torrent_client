@@ -141,6 +141,7 @@ class BitTorrent:
                     # logger.debug(f"{info.name} {info.chunk_num}")
                     # logger.debug(f"{queue.qsize()}")
                     self.handle_piece(info)
+                logger.debug(f"{queue.qsize()}")
 
                 piece_index = chunk_num // self.chunks_per_piece
                 piece = self.pieces[piece_index]
@@ -199,10 +200,7 @@ class BitTorrent:
             if piece.set_to_full():
                 self.bitfield[piece_index] = 1
                 self.complete_pieces += 1
-                logger.debug(f"start {time.time()}")
                 piece.write_on_disk()
-                logger.debug(f"end {time.time()}")
-
 
     def _generate_pieces(self) -> List[Piece]:
         """
