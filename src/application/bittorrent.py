@@ -99,7 +99,7 @@ class BitTorrent:
         try:
             while not self.all_pieces_completed():
                 info = self.cef_handle.receive(timeout_ms=4000)
-                logger.debug(info)
+                # logger.debug(info)
                 if info.is_succeeded and info.is_data:
                     prefix = info.name.split('/')
                     if prefix[0] != 'ccnx:':
@@ -169,7 +169,7 @@ class BitTorrent:
         self.cubic.cals_cwind()
 
     def handle_piece(self, info):
-        # logger.debug("get piece data")
+        logger.debug("get piece data")
         payload = info.payload
         chunk_num = info.chunk_num
 
