@@ -158,7 +158,7 @@ class BitTorrent:
                     piece.blocks[block_index].state = State.PENDING
                     piece.blocks[block_index].last_seen = time.time()
                     self.cubic.now_wind += 1
-                    # logger.debug(f"Send interest: {piece_index}, {chunk_num}")
+                    logger.debug(f"Send interest: {piece_index}, {chunk_num}")
 
             if time.time() - last_time > 1:
                 logger.debug(f"c_window: {int(self.cubic.cwind)} qsize: {queue.qsize()}")
