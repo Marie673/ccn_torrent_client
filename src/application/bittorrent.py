@@ -87,16 +87,18 @@ class BitTorrent:
             process.start()
         except Exception as e:
             logger.error(e)
+            raise e
 
         self.started_time = time.time()
         try:
             self.request_piece_handle(queue)
         except Exception as e:
             logger.error(e)
+            raise e
         except KeyboardInterrupt:
             return
         finally:
-            pass
+            process.join()
 
     def cef_listener(self, queue):
         logger.debug("start cef listener")
