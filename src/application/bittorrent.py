@@ -81,8 +81,8 @@ class BitTorrent:
 
     async def run(self):
         loop = asyncio.get_event_loop()
-        executor = concurrent.futures.ThreadPoolExecutor()
-        # executor = concurrent.futures.ProcessPoolExecutor()
+        # executor = concurrent.futures.ThreadPoolExecutor()
+        executor = concurrent.futures.ProcessPoolExecutor()
         queue = multiprocessing.Queue()
 
         try:
