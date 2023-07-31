@@ -87,6 +87,10 @@ class BitTorrent:
         future = loop.run_in_executor(executor, self.cef_listener, queue)
         self.started_time = time.time()
         try:
+            await asyncio.gather(
+                self.observer(queue),
+                self.request_piece_handle()
+            )
             await loop.run_in_executor(None, self.request_piece_handle)
             while not self.all_pieces_completed():
                 info = await queue.get()
@@ -123,6 +127,11 @@ class BitTorrent:
             logger.error(e)
         except KeyboardInterrupt:
             return
+
+    async def observer(self, queue):
+        while not self.all_pieces_completed():
+            info = await queue.get()
+            self.handle_piece(info)
 
     async def request_piece_handle(self):
         logger.debug("requester is start")
