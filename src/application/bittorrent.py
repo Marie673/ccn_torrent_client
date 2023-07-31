@@ -79,20 +79,18 @@ class BitTorrent:
         self.complete_pieces = 0
         self.started_time = 0
 
-    async def run(self):
-        loop = asyncio.get_event_loop()
-        # executor = concurrent.futures.ThreadPoolExecutor()
-        executor = concurrent.futures.ProcessPoolExecutor()
+    def run(self):
         queue = multiprocessing.Queue()
 
         try:
-            await loop.run_in_executor(executor, self.cef_listener, queue)
+            process = multiprocessing.Process(target=self.cef_listener, args=(queue,))
+            process.start()
         except Exception as e:
             logger.error(e)
 
         self.started_time = time.time()
         try:
-            await self.request_piece_handle(queue)
+            self.request_piece_handle(queue)
         except Exception as e:
             logger.error(e)
         except KeyboardInterrupt:
@@ -126,7 +124,7 @@ class BitTorrent:
         except KeyboardInterrupt:
             return
 
-    async def request_piece_handle(self, queue: multiprocessing.Queue):
+    def request_piece_handle(self, queue: multiprocessing.Queue):
         logger.debug("requester is start")
         last_time = time.time()
 
@@ -135,7 +133,6 @@ class BitTorrent:
                 info = queue.get()
                 self.handle_piece(info)
 
-            await asyncio.sleep(0)
             self.check_chunk_state()
             for chunk_num in range(self.end_chunk_num + 1):
 
