@@ -87,7 +87,7 @@ class BitTorrent:
         future = loop.run_in_executor(executor, self.cef_listener, queue)
         self.started_time = time.time()
         try:
-            sender = loop.run_in_executor(None, self.request_piece_handle)
+            await loop.run_in_executor(None, self.request_piece_handle)
             while not self.all_pieces_completed():
                 info = await queue.get()
                 self.handle_piece(info)
@@ -97,7 +97,6 @@ class BitTorrent:
         except KeyboardInterrupt:
             return
         finally:
-            await sender
             await future
 
     def cef_listener(self, queue):
