@@ -142,9 +142,11 @@ class BitTorrent:
                     # logger.debug(f"{queue.qsize()}")
                     self.handle_piece(info)
 
+                logger.debug(f"start {time.time()}")
                 piece_index = chunk_num // self.chunks_per_piece
                 piece = self.pieces[piece_index]
                 block_index = chunk_num % self.chunks_per_piece
+                logger.debug(f"end {time.time()}")
 
                 self.cubic.cals_cwind()
                 if not self.cubic.now_wind < 5000:
