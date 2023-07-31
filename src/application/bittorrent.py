@@ -82,12 +82,16 @@ class BitTorrent:
     async def run(self):
         loop = asyncio.get_event_loop()
         executor = concurrent.futures.ProcessPoolExecutor()
-        queue = asyncio.Queue
+        queue = asyncio.Queue()
 
-        future = loop.run_in_executor(executor, self.cef_listener)
+        future = loop.run_in_executor(executor, self.cef_listener, queue)
         self.started_time = time.time()
         try:
-            self.request_piece_handle()
+            await self.request_piece_handle()
+            while not self.all_pieces_completed():
+                info = await queue.get()
+                self.handle_piece(info)
+
         except Exception as e:
             logger.error(e)
         except KeyboardInterrupt:
@@ -95,7 +99,7 @@ class BitTorrent:
         finally:
             await future
 
-    def cef_listener(self):
+    def cef_listener(self, queue):
         try:
             while not self.all_pieces_completed():
                 info = self.cef_handle.receive(timeout_ms=4000)
@@ -112,18 +116,19 @@ class BitTorrent:
                         logger.debug(f"incorrect info_hash: {prefix[2]}:{self.info_hash}")
                         continue
 
-                    # self.queue.put(info)
-                    self.handle_piece(info)
+                    queue.put(info)
+                    # self.handle_piece(info)
                     # self.bittorrent.print_progress()
         except Exception as e:
             logger.error(e)
         except KeyboardInterrupt:
             return
 
-    def request_piece_handle(self):
+    async def request_piece_handle(self):
         logger.debug("requester is start")
         last_time = time.time()
         while not self.all_pieces_completed():
+            await asyncio.sleep(0)
             self.check_chunk_state()
             for chunk_num in range(self.end_chunk_num + 1):
 
