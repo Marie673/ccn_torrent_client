@@ -104,6 +104,7 @@ class BitTorrent:
             await future
 
     def cef_listener(self, queue):
+        logger.debug("start cef listener")
         try:
             while not self.all_pieces_completed():
                 info = self.cef_handle.receive(timeout_ms=4000)
