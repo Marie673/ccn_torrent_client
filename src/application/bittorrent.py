@@ -95,18 +95,18 @@ class BitTorrent:
 
         self.started_time = time.time()
         try:
-            listener = self.cef_listener()
-            await self.request_piece_handle()
+            await asyncio.gather(
+                self.cef_listener(),
+                self.request_piece_handle()
+            )
         except Exception as e:
             logger.error(e)
         except KeyboardInterrupt:
             return
         finally:
-            await listener
             pass
 
-    @asyncio.Future
-    def cef_listener(self):
+    async def cef_listener(self):
         logger.debug("start cef listener")
         try:
             while not self.all_pieces_completed():
