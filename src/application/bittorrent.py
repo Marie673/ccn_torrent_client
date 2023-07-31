@@ -194,14 +194,15 @@ class BitTorrent:
         if piece.is_full:
             return
 
-        logger.debug(f"start {time.time()}")
         piece.set_block(offset=offset, data=payload)
         if piece.are_all_blocks_full():
             if piece.set_to_full():
                 self.bitfield[piece_index] = 1
                 self.complete_pieces += 1
+                logger.debug(f"start {time.time()}")
                 piece.write_on_disk()
-        logger.debug(f"end {time.time()}")
+                logger.debug(f"end {time.time()}")
+
 
     def _generate_pieces(self) -> List[Piece]:
         """
