@@ -155,7 +155,7 @@ class BitTorrent:
                     # logger.debug(f"Send interest: {piece_index}, {chunk_num}")
 
             if time.time() - last_time > 1:
-                logger.debug(f"c_window: {int(self.cubic.cwind)}")
+                logger.debug(f"c_window: {int(self.cubic.cwind)} qsize: {queue.qsize()}")
                 self.print_progress()
                 last_time = time.time()
 
