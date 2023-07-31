@@ -135,7 +135,7 @@ class BitTorrent:
             for chunk_num in range(self.end_chunk_num + 1):
                 while not queue.empty():
                     info = queue.get()
-                    logger.debug(f"{info.name} {info.chunk_num}")
+                    # logger.debug(f"{info.name} {info.chunk_num}")
                     self.handle_piece(info)
 
                 piece_index = chunk_num // self.chunks_per_piece
@@ -193,6 +193,7 @@ class BitTorrent:
         piece.set_block(offset=offset, data=payload)
         if piece.are_all_blocks_full():
             if piece.set_to_full():
+                self.bitfield[piece_index] = 1
                 self.complete_pieces += 1
                 piece.write_on_disk()
 
@@ -235,3 +236,4 @@ class BitTorrent:
               f"[block: {block_num} / {self.end_chunk_num + 1}, "
               f"{progress:.2f}%], "
               f"Throughput: {throughput:.2f}Mbps")
+        print(self.bitfield)
