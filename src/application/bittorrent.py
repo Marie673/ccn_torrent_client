@@ -83,29 +83,30 @@ class BitTorrent:
         loop = asyncio.get_event_loop()
         # executor = concurrent.futures.ThreadPoolExecutor()
         executor = concurrent.futures.ProcessPoolExecutor()
-        queue = multiprocessing.Queue()
+        # queue = multiprocessing.Queue()
 
+        """     
         try:
-            future = loop.run_in_executor(executor, self.cef_listener, queue)
-            await future
+            # future = loop.run_in_executor(executor, self.cef_listener, queue)
+            # await future
         except Exception as e:
             logger.error(e)
+        """
 
         self.started_time = time.time()
         try:
-            await asyncio.gather(
-                self.observer(queue),
-                self.request_piece_handle()
-            )
+            listener = self.cef_listener()
+            await self.request_piece_handle()
         except Exception as e:
             logger.error(e)
         except KeyboardInterrupt:
             return
         finally:
+            await listener
             pass
-            # await future
 
-    def cef_listener(self, queue):
+    @asyncio.Future
+    def cef_listener(self):
         logger.debug("start cef listener")
         try:
             while not self.all_pieces_completed():
@@ -123,8 +124,8 @@ class BitTorrent:
                         logger.debug(f"incorrect info_hash: {prefix[2]}:{self.info_hash}")
                         continue
 
-                    queue.put(info)
-                    # self.handle_piece(info)
+                    # queue.put(info)
+                    self.handle_piece(info)
                     # self.bittorrent.print_progress()
         except Exception as e:
             logger.error(e)
