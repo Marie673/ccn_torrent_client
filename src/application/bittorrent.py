@@ -136,7 +136,6 @@ class BitTorrent:
 
             # ここでqueueの状態を監視しないとサイズが膨れ上がる
             for chunk_num in range(self.end_chunk_num + 1):
-                logger.debug(f"{time.time()}")
                 while queue.qsize() > 0:
                     info = queue.get()
                     # logger.debug(f"{info.name} {info.chunk_num}")
@@ -195,12 +194,14 @@ class BitTorrent:
         if piece.is_full:
             return
 
+        logger.debug(f"start {time.time()}")
         piece.set_block(offset=offset, data=payload)
         if piece.are_all_blocks_full():
             if piece.set_to_full():
                 self.bitfield[piece_index] = 1
                 self.complete_pieces += 1
                 piece.write_on_disk()
+        logger.debug(f"end {time.time()}")
 
     def _generate_pieces(self) -> List[Piece]:
         """
