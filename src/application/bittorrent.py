@@ -141,6 +141,7 @@ class BitTorrent:
                     logger.debug(f"{time.time()} {info.name} {info.chunk_num}")
                     # logger.debug(f"{queue.qsize()}")
                     self.handle_piece(info)
+                logger.debug("end observer")
 
                 piece_index = chunk_num // self.chunks_per_piece
                 piece = self.pieces[piece_index]
