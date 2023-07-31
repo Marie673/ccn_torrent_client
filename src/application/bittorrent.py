@@ -135,6 +135,7 @@ class BitTorrent:
             for chunk_num in range(self.end_chunk_num + 1):
                 while not queue.empty():
                     info = queue.get()
+                    logger.debug(info)
                     self.handle_piece(info)
 
                 piece_index = chunk_num // self.chunks_per_piece
