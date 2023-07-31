@@ -118,7 +118,7 @@ class BitTorrent:
                     if prefix[2] != self.info_hash:
                         logger.debug(f"incorrect info_hash: {prefix[2]}:{self.info_hash}")
                         continue
-                    logger.debug(f"{info.name}, {info.chunk_num}")
+                    # logger.debug(f"{info.name}, {info.chunk_num}")
                     queue.put(info)
                     # self.handle_piece(info)
                     # self.bittorrent.print_progress()
@@ -137,6 +137,7 @@ class BitTorrent:
             # ここでqueueの状態を監視しないとサイズが膨れ上がる
             for chunk_num in range(self.end_chunk_num + 1):
                 while queue.qsize() > 0:
+                    logger.debug(queue)
                     info = queue.get()
                     # logger.debug(f"{info.name} {info.chunk_num}")
                     self.handle_piece(info)
