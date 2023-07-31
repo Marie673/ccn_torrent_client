@@ -98,6 +98,7 @@ class BitTorrent:
         except KeyboardInterrupt:
             return
         finally:
+            process.kill()
             process.join()
 
     def cef_listener(self, queue):
