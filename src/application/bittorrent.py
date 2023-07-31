@@ -136,10 +136,11 @@ class BitTorrent:
 
             # ここでqueueの状態を監視しないとサイズが膨れ上がる
             for chunk_num in range(self.end_chunk_num + 1):
+                logger.debug("test")
                 while queue.qsize() > 0:
                     info = queue.get()
                     # logger.debug(f"{info.name} {info.chunk_num}")
-                    logger.debug(f"{queue.qsize()}")
+                    # logger.debug(f"{queue.qsize()}")
                     self.handle_piece(info)
 
                 piece_index = chunk_num // self.chunks_per_piece
@@ -158,7 +159,7 @@ class BitTorrent:
                     piece.blocks[block_index].state = State.PENDING
                     piece.blocks[block_index].last_seen = time.time()
                     self.cubic.now_wind += 1
-                    logger.debug(f"Send interest: {piece_index}, {chunk_num}")
+                    # logger.debug(f"Send interest: {piece_index}, {chunk_num}")
 
             if time.time() - last_time > 1:
                 logger.debug(f"c_window: {int(self.cubic.cwind)} qsize: {queue.qsize()}")
