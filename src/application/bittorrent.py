@@ -105,7 +105,7 @@ class BitTorrent :
     def cef_listener(self):
         while not self.all_pieces_completed():
             logger.debug(f"{self.cef_handle.handler.__dict__}")
-            read = self.cef_handle.handler.sock
+            read = self.cef_handle.handler
             read_list, _, _ = select.select(read, [], [], 60)
 
             def read_from_socket(sock):
