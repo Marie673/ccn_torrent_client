@@ -129,12 +129,13 @@ class BitTorrent:
         last_time = time.time()
 
         while not self.all_pieces_completed():
-            while not queue.empty():
-                info = queue.get()
-                self.handle_piece(info)
-
             self.check_chunk_state()
+
+            # ここでqueueの状態を監視しないとサイズが膨れ上がる
             for chunk_num in range(self.end_chunk_num + 1):
+                while not queue.empty():
+                    info = queue.get()
+                    self.handle_piece(info)
 
                 piece_index = chunk_num // self.chunks_per_piece
                 piece = self.pieces[piece_index]
