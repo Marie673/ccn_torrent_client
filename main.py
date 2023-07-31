@@ -21,7 +21,7 @@ def main():
     
     torrent = Torrent(path)
     bp = b.BitTorrent(torrent)
-    bp.run()
+    asyncio.run(bp.run())
 
 
 if __name__ == "__main__":
