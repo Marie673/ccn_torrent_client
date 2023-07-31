@@ -140,18 +140,19 @@ class BitTorrent:
                 piece = self.pieces[piece_index]
                 block_index = chunk_num % self.chunks_per_piece
 
+                self.cubic.cals_cwind()
+                if not self.cubic.now_wind < self.cubic.cwind:
+                    break
+
                 if piece.blocks[block_index].state == State.FREE:
-                    if self.cubic.now_wind < self.cubic.cwind:
-                        self.cef_handle.send_interest(
-                            name=self.name,
-                            chunk_num=chunk_num
-                        )
-                        piece.blocks[block_index].state = State.PENDING
-                        piece.blocks[block_index].last_seen = time.time()
-                        self.cubic.now_wind += 1
-                        # logger.debug(f"Send interest: {piece_index}, {chunk_num}")
-                    else:
-                        break
+                    self.cef_handle.send_interest(
+                        name=self.name,
+                        chunk_num=chunk_num
+                    )
+                    piece.blocks[block_index].state = State.PENDING
+                    piece.blocks[block_index].last_seen = time.time()
+                    self.cubic.now_wind += 1
+                    # logger.debug(f"Send interest: {piece_index}, {chunk_num}")
 
             if time.time() - last_time > 1:
                 logger.debug(f"c_window: {int(self.cubic.cwind)}")
