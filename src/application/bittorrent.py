@@ -84,8 +84,12 @@ class BitTorrent:
         executor = concurrent.futures.ProcessPoolExecutor()
         queue = asyncio.Queue()
 
-        future = loop.run_in_executor(executor, self.cef_listener, queue)
-        await future
+        try:
+            future = loop.run_in_executor(executor, self.cef_listener, queue)
+            await future
+        except Exception as e:
+            logger.error(e)
+
         self.started_time = time.time()
         try:
             await asyncio.gather(
