@@ -85,6 +85,7 @@ class BitTorrent:
         queue = asyncio.Queue()
 
         future = loop.run_in_executor(executor, self.cef_listener, queue)
+        await future
         self.started_time = time.time()
         try:
             await asyncio.gather(
@@ -96,7 +97,8 @@ class BitTorrent:
         except KeyboardInterrupt:
             return
         finally:
-            await future
+            pass
+            # await future
 
     def cef_listener(self, queue):
         logger.debug("start cef listener")
