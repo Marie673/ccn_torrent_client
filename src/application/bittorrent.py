@@ -138,10 +138,9 @@ class BitTorrent:
             for chunk_num in range(self.end_chunk_num + 1):
                 while queue.qsize() > 0:
                     info = queue.get()
-                    # logger.debug(f"{info.name} {info.chunk_num}")
+                    logger.debug(f"{time.time()} {info.name} {info.chunk_num}")
                     # logger.debug(f"{queue.qsize()}")
                     self.handle_piece(info)
-                logger.debug(f"{queue.qsize()}")
 
                 piece_index = chunk_num // self.chunks_per_piece
                 piece = self.pieces[piece_index]
