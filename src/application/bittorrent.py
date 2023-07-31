@@ -91,11 +91,6 @@ class BitTorrent:
                 self.observer(queue),
                 self.request_piece_handle()
             )
-            await loop.run_in_executor(None, self.request_piece_handle)
-            while not self.all_pieces_completed():
-                info = await queue.get()
-                self.handle_piece(info)
-
         except Exception as e:
             logger.error(e)
         except KeyboardInterrupt:
