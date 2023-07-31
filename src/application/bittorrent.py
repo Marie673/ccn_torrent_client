@@ -143,7 +143,7 @@ class BitTorrent:
                 block_index = chunk_num % self.chunks_per_piece
 
                 self.cubic.cals_cwind()
-                if not self.cubic.now_wind < 25600:
+                if not self.cubic.now_wind < 5000:
                     break
 
                 if piece.blocks[block_index].state == State.FREE:
