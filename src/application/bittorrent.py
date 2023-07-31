@@ -131,6 +131,7 @@ class BitTorrent:
     async def observer(self, queue):
         while not self.all_pieces_completed():
             info = await queue.get()
+            logger.debug(info)
             self.handle_piece(info)
 
     async def request_piece_handle(self):
