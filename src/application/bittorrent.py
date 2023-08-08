@@ -103,8 +103,9 @@ class BitTorrent:
             while not self.all_pieces_completed():
                 if time.time() - last_seen_time > 1:
                     self.print_progress()
+
                 info = self.cef_handle.receive()
-                # logger.debug(f"{info.name}, {info.chunk_num}")
+                logger.debug(f"{info.name}, {info.chunk_num}")
                 if info.is_succeeded and info.is_data:
                     prefix = info.name.split('/')
                     if prefix[0] != 'ccnx:':
