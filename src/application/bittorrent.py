@@ -76,17 +76,12 @@ class BitTorrent:
         self.queue = multiprocessing.Queue()
 
     def run(self):
+        req_p = None
         try:
             req_p = multiprocessing.Process(target=self.request_piece_handle())
             req_p.start()
-            self.cef_listener()
-        except Exception as e:
-            logger.error(e)
-            raise e
 
-        self.started_time = time.time()
-        try:
-            self.request_piece_handle()
+            self.cef_listener()
         except Exception as e:
             logger.error(e)
             raise e
