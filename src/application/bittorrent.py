@@ -1,23 +1,14 @@
-import asyncio
-import concurrent.futures
 import os
-import threading
-
 import cefpyco
 import time
 import bitstring
-import select
-import socket
-import errno
+from typing import List
+import multiprocessing
 
 from src.application.cubic import Cubic
 from src.domain.entity.piece.piece import Piece
 from src.domain.entity.piece.block import State
 from src.domain.entity.torrent import Torrent, Info, FileMode
-from typing import List
-import multiprocessing
-from threading import Thread
-import datetime
 
 from logger import logger
 
@@ -29,8 +20,8 @@ EVALUATION = True
 EVALUATION_PATH = "/client/evaluation/ccn_client/test"
 
 
-class BitTorrent :
-    def __init__(self, torrent: Torrent) :
+class BitTorrent:
+    def __init__(self, torrent: Torrent):
         """
         トレントファイル解析
         ↓
@@ -55,7 +46,7 @@ class BitTorrent :
             self.number_of_pieces = int(self.info.length / self.info.piece_length)
         else:
             length: int = 0
-            for file in self.info.files :
+            for file in self.info.files:
                 length += file.length
             self.number_of_pieces = int(length / self.info.piece_length)
 
@@ -82,10 +73,13 @@ class BitTorrent :
         self.complete_pieces = 0
         self.started_time = 0
 
+        self.queue = multiprocessing.Queue()
+
     def run(self):
         try:
-            t = threading.Thread(target=self.cef_listener())
-            t.start()
+            req_p = multiprocessing.Process(target=self.request_piece_handle())
+            req_p.start()
+            self.cef_listener()
         except Exception as e:
             logger.error(e)
             raise e
@@ -99,72 +93,36 @@ class BitTorrent :
         except KeyboardInterrupt:
             return
         finally:
-            t.join()
+            req_p.kill()
             pass
 
     def cef_listener(self):
-        while not self.all_pieces_completed():
-            logger.debug(f"{self.cef_handle.__dict__}")
-            read = self.cef_handle.handler[0].sock
-            logger.debug(read)
-            read_list, _, _ = select.select(read, [], [], 60)
-
-            def read_from_socket(sock):
-                data = b''
-
-                while True:
-                    try:
-                        buff = sock.recv(4096)
-                        if len(buff) <= 0:
-                            break
-
-                        data += buff
-                    except socket.error as e:
-                        err = e.args[0]
-                        if err != errno.EAGAIN or err != errno.EWOULDBLOCK:
-                            logger.debug("Wrong errno {}".format(err))
-                        break
-                    except Exception as e:
-                        logger.exception(f"Recv failed. {e}")
-                        break
-
-                return data
-
-            data = read_from_socket(read)
-            logger.debug(data)
-
-    """
-    def cef_listener(self, queue):
         logger.debug("start cef listener")
-        try:
-            while not self.all_pieces_completed():
-                info = self.cef_handle.receive(timeout_ms=4000)
+        try :
+            while not self.all_pieces_completed() :
+                info = self.cef_handle.receive()
                 # logger.debug(f"{info.name}, {info.chunk_num}")
-                if info.is_succeeded and info.is_data:
+                if info.is_succeeded and info.is_data :
                     prefix = info.name.split('/')
-                    if prefix[0] != 'ccnx:':
+                    if prefix[0] != 'ccnx:' :
                         logger.debug("incorrect prefix")
                         continue
-                    if prefix[1] != 'BitTorrent':
+                    if prefix[1] != 'BitTorrent' :
                         logger.debug("incorrect protocol")
                         continue
-                    if prefix[2] != self.info_hash:
+                    if prefix[2] != self.info_hash :
                         logger.debug(f"incorrect info_hash: {prefix[2]}:{self.info_hash}")
                         continue
                     # logger.debug(f"{info.name}, {info.chunk_num}")
-                    queue.put(info)
-                    # self.handle_piece(info)
+                    self.handle_piece(info)
                     # self.bittorrent.print_progress()
-        except Exception as e:
+        except Exception as e :
             logger.error(e)
-        except KeyboardInterrupt:
+        except KeyboardInterrupt :
             return
-    """
 
     def request_piece_handle(self):
         logger.debug("requester is start")
-        last_time = time.time()
-
         while not self.all_pieces_completed():
             self.check_chunk_state()
 
@@ -179,7 +137,7 @@ class BitTorrent :
                 if not self.cubic.now_wind < 5000:
                     break
 
-                if piece.blocks[block_index].state == State.FREE :
+                if piece.blocks[block_index].state == State.FREE:
                     self.cef_handle.send_interest(
                         name=self.name,
                         chunk_num=chunk_num
@@ -189,47 +147,52 @@ class BitTorrent :
                     self.cubic.now_wind += 1
                     # logger.debug(f"Send interest: {piece_index}, {chunk_num}")
 
-            if time.time() - last_time > 1 :
-                logger.debug(f"c_window: {int(self.cubic.cwind)} qsize: {queue.qsize()}")
-                self.print_progress()
-                last_time = time.time()
+    def check_chunk_state(self):
+        while self.queue.qsize() > 0:
+            (piece_index, block_index) = self.queue.get()
+            piece = self.pieces[piece_index]
+            block = piece.blocks[block_index]
+            block.state = State.FULL
+            block.last_seen = time.time()
 
-    def check_chunk_state(self) :
         pending_chunk_num = 0
-        for chunk_num in range(self.end_chunk_num + 1) :
+        for chunk_num in range(self.end_chunk_num + 1):
             piece_index = chunk_num // self.chunks_per_piece
             piece = self.pieces[piece_index]
             block_index = chunk_num % self.chunks_per_piece
 
-            if piece.blocks[block_index].state == State.PENDING :
-                if time.time() - piece.blocks[block_index].last_seen > TIME_OUT :
+            if piece.blocks[block_index].state == State.PENDING:
+                if time.time() - piece.blocks[block_index].last_seen > TIME_OUT:
                     piece.blocks[block_index].state = State.FREE
                     piece.blocks[block_index].last_seen = time.time()
                     self.cubic.last_time_loss = time.time()
                     self.cubic.w_max = self.cubic.cwind
-                else :
+                else:
                     pending_chunk_num += 1
 
         self.cubic.now_wind = pending_chunk_num
 
-    def handle_piece(self, info) :
+    def handle_piece(self, info):
         payload = info.payload
         chunk_num = info.chunk_num
 
         piece_index = chunk_num // self.chunks_per_piece
         offset = (chunk_num % self.chunks_per_piece) * CHUNK_SIZE
         piece = self.pieces[piece_index]
-        if piece.is_full :
+        block_index = int(offset / CHUNK_SIZE)
+
+        self.queue.put((piece_index, block_index))
+        if piece.is_full:
             return
 
         piece.set_block(offset=offset, data=payload)
-        if piece.are_all_blocks_full() :
-            if piece.set_to_full() :
+        if piece.are_all_blocks_full():
+            if piece.set_to_full():
                 self.bitfield[piece_index] = 1
                 self.complete_pieces += 1
                 piece.write_on_disk()
 
-    def _generate_pieces(self) -> List[Piece] :
+    def _generate_pieces(self) -> List[Piece]:
         """
         torrentの全てのpieceを生成して初期化
         :return: List[Piece]
@@ -249,17 +212,17 @@ class BitTorrent :
 
         return pieces
 
-    def all_pieces_completed(self) -> bool :
-        for piece in self.pieces :
-            if not piece.is_full :
+    def all_pieces_completed(self) -> bool:
+        for piece in self.pieces:
+            if not piece.is_full:
                 return False
         return True
 
-    def print_progress(self) :
+    def print_progress(self):
         block_num = 0
-        for piece in self.pieces :
-            for block in piece.blocks :
-                if block.state == State.FULL :
+        for piece in self.pieces:
+            for block in piece.blocks:
+                if block.state == State.FULL:
                     block_num += 1
 
         progress = (block_num / (self.end_chunk_num + 1)) * 100
