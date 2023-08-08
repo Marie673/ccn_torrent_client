@@ -98,6 +98,7 @@ class BitTorrent:
             while not self.all_pieces_completed():
                 if time.time() - last_seen_time > 1:
                     self.print_progress()
+                    last_seen_time = time.time()
 
                 info = self.cef_handle.receive()
                 logger.debug(f"{info.name}, {info.chunk_num}")
