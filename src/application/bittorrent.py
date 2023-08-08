@@ -71,13 +71,14 @@ class BitTorrent:
 
         self.compete_block = 0
         self.complete_pieces = 0
-        self.started_time = 0
+        self.started_time = None
 
         self.queue = multiprocessing.Queue()
 
     def run(self):
         req_p = None
         try:
+            self.started_time = time.time()
             req_p = multiprocessing.Process(target=self.request_piece_handle)
             req_p.start()
 
