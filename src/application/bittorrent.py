@@ -78,7 +78,7 @@ class BitTorrent:
     def run(self):
         req_p = None
         try:
-            req_p = multiprocessing.Process(target=self.request_piece_handle())
+            req_p = multiprocessing.Process(target=self.request_piece_handle)
             req_p.start()
 
             self.cef_listener()
