@@ -101,7 +101,7 @@ class BitTorrent:
                     self.print_progress()
                     last_seen_time = time.time()
 
-                info = self.cef_handle.receive()
+                info = self.cef_handle.receive(timeout_ms=1000)
                 # logger.debug(f"{info.name}, {info.chunk_num}")
                 if info.is_succeeded and info.is_data:
                     prefix = info.name.split('/')
