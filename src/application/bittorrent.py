@@ -150,11 +150,11 @@ class BitTorrent:
 
     def check_chunk_state(self):
         while self.queue.qsize() > 0:
-            (piece_index, block_index) = self.queue.get()
+            piece_index = self.queue.get()
             piece = self.pieces[piece_index]
-            block = piece.blocks[block_index]
-            block.state = State.FULL
-            block.last_seen = time.time()
+            for block in piece.blocks:
+                block.state = State.FULL
+                block.last_seen = time.time()
 
         pending_chunk_num = 0
         for chunk_num in range(self.end_chunk_num + 1):
@@ -182,12 +182,13 @@ class BitTorrent:
         piece = self.pieces[piece_index]
         block_index = int(offset / CHUNK_SIZE)
 
-        self.queue.put((piece_index, block_index))
         if piece.is_full:
             return
 
         piece.set_block(offset=offset, data=payload)
+
         if piece.are_all_blocks_full():
+            self.queue.put(piece_index)
             if piece.set_to_full():
                 self.bitfield[piece_index] = 1
                 self.complete_pieces += 1
