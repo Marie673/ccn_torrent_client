@@ -210,15 +210,15 @@ class BitTorrent:
         pieces: List[Piece] = []
         last_piece = self.number_of_pieces - 1
 
-        for i in range(self.number_of_pieces) :
+        for i in range(self.number_of_pieces):
             start = i * 20
             end = start + 20
 
-            if i == last_piece :
+            if i == last_piece:
                 piece_length = self.info.length - (self.number_of_pieces - 1) * self.info.piece_length
-                pieces.append(Piece(i, piece_length, self.info.pieces[start :end], self.file_path))
-            else :
-                pieces.append(Piece(i, self.info.piece_length, self.info.pieces[start :end], self.file_path))
+                pieces.append(Piece(i, piece_length, self.info.pieces[start:end], self.file_path))
+            else:
+                pieces.append(Piece(i, self.info.piece_length, self.info.pieces[start:end], self.file_path))
 
         return pieces
 
@@ -228,6 +228,8 @@ class BitTorrent:
                 return False
         return True
 
+    last_bock_num = 0
+
     def print_progress(self):
         block_num = 0
         for piece in self.pieces:
@@ -236,7 +238,8 @@ class BitTorrent:
                     block_num += 1
 
         progress = (block_num / (self.end_chunk_num + 1)) * 100
-        throughput = (block_num * CHUNK_SIZE * 8 / (time.time() - self.started_time)) / 1024 ** 2
+        throughput = ((block_num - self.last_bock_num) * CHUNK_SIZE * 8) / 1024 ** 2
+        # throughput = (block_num * CHUNK_SIZE * 8 / (time.time() - self.started_time)) / 1024 ** 2
         print(f"[piece: {self.complete_pieces} / {self.number_of_pieces}]"
               f"[block: {block_num} / {self.end_chunk_num + 1}, "
               f"{progress:.2f}%], "
