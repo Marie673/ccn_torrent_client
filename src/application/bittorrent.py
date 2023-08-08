@@ -98,27 +98,30 @@ class BitTorrent:
 
     def cef_listener(self):
         logger.debug("start cef listener")
-        try :
-            while not self.all_pieces_completed() :
+        try:
+            last_seen_time = time.time()
+            while not self.all_pieces_completed():
+                if time.time() - last_seen_time > 1:
+                    self.print_progress()
                 info = self.cef_handle.receive()
                 # logger.debug(f"{info.name}, {info.chunk_num}")
-                if info.is_succeeded and info.is_data :
+                if info.is_succeeded and info.is_data:
                     prefix = info.name.split('/')
-                    if prefix[0] != 'ccnx:' :
+                    if prefix[0] != 'ccnx:':
                         logger.debug("incorrect prefix")
                         continue
-                    if prefix[1] != 'BitTorrent' :
+                    if prefix[1] != 'BitTorrent':
                         logger.debug("incorrect protocol")
                         continue
-                    if prefix[2] != self.info_hash :
+                    if prefix[2] != self.info_hash:
                         logger.debug(f"incorrect info_hash: {prefix[2]}:{self.info_hash}")
                         continue
                     # logger.debug(f"{info.name}, {info.chunk_num}")
                     self.handle_piece(info)
                     # self.bittorrent.print_progress()
-        except Exception as e :
+        except Exception as e:
             logger.error(e)
-        except KeyboardInterrupt :
+        except KeyboardInterrupt:
             return
 
     def request_piece_handle(self):
