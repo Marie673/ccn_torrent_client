@@ -127,7 +127,6 @@ class BitTorrent:
         while not self.all_pieces_completed():
             self.check_chunk_state()
 
-            # ここでqueueの状態を監視しないとサイズが膨れ上がる
             for chunk_num in range(self.end_chunk_num + 1):
 
                 piece_index = chunk_num // self.chunks_per_piece
@@ -142,6 +141,7 @@ class BitTorrent:
                         name=self.name,
                         chunk_num=chunk_num
                     )
+                    logger.debug(f"piece_index: {piece_index}, chunk: {chunk_num}")
                     piece.blocks[block_index].state = State.PENDING
                     piece.blocks[block_index].last_seen = time.time()
                     self.cubic.now_wind += 1
