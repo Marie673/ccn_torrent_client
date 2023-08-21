@@ -219,11 +219,9 @@ class BitTorrent:
 
             if i == last_piece:
                 piece_length = self.info.length - (self.number_of_pieces - 1) * self.info.piece_length
-                logger.debug(f"last piece_length: {piece_length}")
                 pieces.append(Piece(i, piece_length, self.info.pieces[start:end], self.file_path))
             else:
                 pieces.append(Piece(i, self.info.piece_length, self.info.pieces[start:end], self.file_path))
-        logger.debug("testetetsetaaaaaaaaaaaaaaaaaaaaaaaaaaaaaasat")
         return pieces
 
     def all_pieces_completed(self) -> bool:
