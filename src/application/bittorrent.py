@@ -223,7 +223,7 @@ class BitTorrent:
                 pieces.append(Piece(i, piece_length, self.info.pieces[start:end], self.file_path))
             else:
                 pieces.append(Piece(i, self.info.piece_length, self.info.pieces[start:end], self.file_path))
-
+        logger.debug("testetetsetsat")
         return pieces
 
     def all_pieces_completed(self) -> bool:
