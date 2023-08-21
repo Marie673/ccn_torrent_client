@@ -1,4 +1,5 @@
 import os
+import math
 import cefpyco
 import time
 import bitstring
@@ -53,16 +54,9 @@ class BitTorrent:
                 length += file.length
             self.number_of_pieces = int(length / self.info.piece_length)
 
-        # 1ピース当たりのチャンク数
-        # ピースの最後を表現するときに、チャンクサイズで余りが出ても次のピースデータを含めない.
-        if self.info.piece_length % CHUNK_SIZE == 0:
-            self.chunks_per_piece = self.info.piece_length // CHUNK_SIZE
-        else:
-            self.chunks_per_piece = (self.info.piece_length // CHUNK_SIZE) + 1
-
         # end_chunk_numの計算.
         # chunk_numは0から数え始めるので、-1する.
-        self.end_chunk_num = self.chunks_per_piece * self.number_of_pieces - 1
+        self.end_chunk_num = self.number_of_pieces * math.ceil(float(self.info.piece_length) / CHUNK_SIZE) - 1
 
         self.bitfield: bitstring.BitArray = bitstring.BitArray(self.number_of_pieces)
         self.pieces = self._generate_pieces()
