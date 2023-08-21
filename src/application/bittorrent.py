@@ -43,7 +43,10 @@ class BitTorrent:
 
         # number_of_pieces の計算
         if torrent.file_mode == FileMode.single_file:
-            self.number_of_pieces = int(self.info.length / self.info.piece_length)
+            if self.info.length % self.info.piece_length == 0:
+                self.number_of_pieces = int(self.info.length / self.info.piece_length)
+            else:
+                self.number_of_pieces = int(self.info.length / self.info.piece_length) + 1
         else:
             length: int = 0
             for file in self.info.files:
