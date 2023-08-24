@@ -165,6 +165,9 @@ class BitTorrent:
 
         pending_chunk_num = 0
         for piece in self.pieces:
+            if piece.is_full:
+                continue
+
             for block in piece.blocks:
                 if block.state == State.PENDING:
                     if time.time() - block.last_seen > TIME_OUT:
