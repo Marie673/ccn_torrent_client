@@ -80,6 +80,8 @@ class BitTorrent:
             req_p.start()
 
             self.cef_listener()
+
+            logger.info(f'download time: {time.time() - self.started_time}')
         except Exception as e:
             logger.error(e)
             raise e
@@ -87,7 +89,6 @@ class BitTorrent:
             return
         finally:
             req_p.kill()
-            pass
 
     def cef_listener(self):
         logger.debug("start cef listener")
