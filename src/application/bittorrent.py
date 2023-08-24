@@ -21,6 +21,32 @@ EVALUATION = True
 EVALUATION_PATH = "/client/evaluation/ccn_client/test"
 
 
+class Color:
+    BLACK = '\033[30m'  # (文字)黒
+    RED = '\033[31m'  # (文字)赤
+    GREEN = '\033[32m'  # (文字)緑
+    YELLOW = '\033[33m'  # (文字)黄
+    BLUE = '\033[34m'  # (文字)青
+    MAGENTA = '\033[35m'  # (文字)マゼンタ
+    CYAN = '\033[36m'  # (文字)シアン
+    WHITE = '\033[37m'  # (文字)白
+    COLOR_DEFAULT = '\033[39m'  # 文字色をデフォルトに戻す
+    BOLD = '\033[1m'  # 太字
+    UNDERLINE = '\033[4m'  # 下線
+    INVISIBLE = '\033[08m'  # 不可視
+    REVERCE = '\033[07m'  # 文字色と背景色を反転
+    BG_BLACK = '\033[40m'  # (背景)黒
+    BG_RED = '\033[41m'  # (背景)赤
+    BG_GREEN = '\033[42m'  # (背景)緑
+    BG_YELLOW = '\033[43m'  # (背景)黄
+    BG_BLUE = '\033[44m'  # (背景)青
+    BG_MAGENTA = '\033[45m'  # (背景)マゼンタ
+    BG_CYAN = '\033[46m'  # (背景)シアン
+    BG_WHITE = '\033[47m'  # (背景)白
+    BG_DEFAULT = '\033[49m'  # 背景色をデフォルトに戻す
+    RESET = '\033[0m'  # 全てリセット
+
+
 class MaxWindowSize(Exception):
     pass
 
@@ -131,7 +157,7 @@ class BitTorrent:
             self.check_chunk_state()
 
             if time.time() - last_time > 1:
-                print(f'cubic_window: {int(self.cubic.cwind)}, now_window: {self.cubic.now_wind}')
+                print(f'{Color.BLUE}cubic_window: {int(self.cubic.cwind)}, now_window: {self.cubic.now_wind}{Color.RESET}')
                 last_time = time.time()
 
             def send_piece_interest():
@@ -252,8 +278,10 @@ class BitTorrent:
         throughput = ((block_num - self.last_bock_num) * CHUNK_SIZE * 8) / 1024 ** 2
         self.last_bock_num = block_num
         # throughput = (block_num * CHUNK_SIZE * 8 / (time.time() - self.started_time)) / 1024 ** 2
-        print(f"[piece: {self.complete_pieces} / {self.number_of_pieces}]"
+        print(f"{Color.BG_WHITE}"
+              f"[piece: {self.complete_pieces} / {self.number_of_pieces}]"
               f"[block: {block_num} / {self.num_of_all_of_blocks + 1}, "
               f"{progress:.2f}%], "
-              f"[Throughput: {throughput:.2f}Mbps]")
+              f"[Throughput: {throughput:.2f}Mbps]"
+              f"{Color.RESET}")
         print(self.bitfield)
