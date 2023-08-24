@@ -237,5 +237,6 @@ class BitTorrent:
         print(f"[piece: {self.complete_pieces} / {self.number_of_pieces}]"
               f"[block: {block_num} / {self.num_of_all_of_blocks + 1}, "
               f"{progress:.2f}%], "
-              f"Throughput: {throughput:.2f}Mbps")
+              f"Throughput: {throughput:.2f}Mbps ",
+              f"window_size: {self.cubic.cwind}")
         print(self.bitfield)
