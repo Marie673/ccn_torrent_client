@@ -54,12 +54,12 @@ class BitTorrent:
                 length += file.length
             self.number_of_pieces = int(length / self.info.piece_length)
 
-        # end_chunk_numの計算.
-        # chunk_numは0から数え始めるので、-1する.
-        self.end_chunk_num = self.number_of_pieces * math.ceil(float(self.info.piece_length) / CHUNK_SIZE) - 1
-
         self.bitfield: bitstring.BitArray = bitstring.BitArray(self.number_of_pieces)
         self.pieces = self._generate_pieces()
+        self.num_of_all_of_blocks = 0
+        for piece in self.pieces:
+            for _ in piece.blocks:
+                self.num_of_all_of_blocks += 1
 
         self.cef_handle = cefpyco.CefpycoHandle()
         self.cef_handle.begin()
@@ -124,25 +124,24 @@ class BitTorrent:
         while not self.all_pieces_completed():
             self.check_chunk_state()
 
-            for chunk_num in range(self.end_chunk_num + 1):
+            for piece in self.pieces:
+                piece_index = piece.piece_index
 
-                piece_index = chunk_num // self.chunks_per_piece
-                piece = self.pieces[piece_index]
-                block_index = chunk_num % self.chunks_per_piece
+                for block_index, block in enumerate(piece.blocks):
 
-                if self.cubic.now_wind > self.cubic.cals_cwind():
-                    break
+                    if self.cubic.now_wind > self.cubic.cals_cwind():
+                        break
 
-                if piece.blocks[block_index].state == State.FREE:
-                    self.cef_handle.send_interest(
-                        name=self.name,
-                        chunk_num=chunk_num
-                    )
-                    logger.debug(f"piece_index: {piece_index}, chunk: {chunk_num}")
-                    piece.blocks[block_index].state = State.PENDING
-                    piece.blocks[block_index].last_seen = time.time()
-                    self.cubic.now_wind += 1
-                    # logger.debug(f"Send interest: {piece_index}, {chunk_num}")
+                    if block.state == State.FREE:
+                        self.cef_handle.send_interest(
+                            name=self.name,
+                            chunk_num=block_index
+                        )
+                        logger.debug(f"piece_index: {piece_index}, chunk: {block_index}")
+                        piece.blocks[block_index].state = State.PENDING
+                        piece.blocks[block_index].last_seen = time.time()
+                        self.cubic.now_wind += 1
+                        # logger.debug(f"Send interest: {piece_index}, {chunk_num}")
 
     def check_chunk_state(self):
         while self.queue.qsize() > 0:
@@ -159,30 +158,27 @@ class BitTorrent:
                     block.last_seen = time.time()
 
         pending_chunk_num = 0
-        for chunk_num in range(self.end_chunk_num + 1):
-            piece_index = chunk_num // self.chunks_per_piece
-            piece = self.pieces[piece_index]
-            block_index = chunk_num % self.chunks_per_piece
-
-            if piece.blocks[block_index].state == State.PENDING:
-                if time.time() - piece.blocks[block_index].last_seen > TIME_OUT:
-                    piece.blocks[block_index].state = State.FREE
-                    piece.blocks[block_index].last_seen = time.time()
-                    self.cubic.last_time_loss = time.time()
-                    self.cubic.w_max = self.cubic.cwind
-                else:
-                    pending_chunk_num += 1
+        for piece in self.pieces:
+            for block in piece.blocks:
+                if block.state == State.PENDING:
+                    if time.time() - block.last_seen > TIME_OUT:
+                        block.state = State.FREE
+                        block.last_seen = time.time()
+                        self.cubic.last_time_loss = time.time()
+                        self.cubic.w_max = self.cubic.cwind
+                    else:
+                        pending_chunk_num += 1
 
         self.cubic.now_wind = pending_chunk_num
 
     def handle_piece(self, info):
+        piece_index = info.name.split('/')[3]
         payload = info.payload
         chunk_num = info.chunk_num
 
-        piece_index = chunk_num // self.chunks_per_piece
-        offset = (chunk_num % self.chunks_per_piece) * CHUNK_SIZE
+        offset = chunk_num * CHUNK_SIZE
         piece = self.pieces[piece_index]
-        block_index = int(offset / CHUNK_SIZE)
+        block_index = chunk_num
 
         if piece.is_full:
             return
@@ -233,12 +229,12 @@ class BitTorrent:
                 if block.state == State.FULL:
                     block_num += 1
 
-        progress = (block_num / (self.end_chunk_num + 1)) * 100
+        progress = (block_num / (self.num_of_all_of_blocks + 1)) * 100
         throughput = ((block_num - self.last_bock_num) * CHUNK_SIZE * 8) / 1024 ** 2
         self.last_bock_num = block_num
         # throughput = (block_num * CHUNK_SIZE * 8 / (time.time() - self.started_time)) / 1024 ** 2
         print(f"[piece: {self.complete_pieces} / {self.number_of_pieces}]"
-              f"[block: {block_num} / {self.end_chunk_num + 1}, "
+              f"[block: {block_num} / {self.num_of_all_of_blocks + 1}, "
               f"{progress:.2f}%], "
               f"Throughput: {throughput:.2f}Mbps")
         print(self.bitfield)
