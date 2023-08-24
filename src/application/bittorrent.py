@@ -127,7 +127,7 @@ class BitTorrent:
             self.check_chunk_state()
 
             if time.time() - last_time > 1:
-                logger.debug(f'cubic_window: {int(self.cubic.cwind)}, now_window: {self.cubic.now_wind}')
+                print(f'cubic_window: {int(self.cubic.cwind)}, now_window: {self.cubic.now_wind}')
                 last_time = time.time()
 
             for piece in self.pieces:
