@@ -81,7 +81,7 @@ class BitTorrent:
 
             self.cef_listener()
 
-            logger.info(f'download time: {time.time() - self.started_time}')
+            logger.info(f'download time: {(time.time() - self.started_time):.2f}')
         except Exception as e:
             logger.error(e)
             raise e
@@ -122,8 +122,13 @@ class BitTorrent:
 
     def request_piece_handle(self):
         logger.debug("requester is start")
+        last_time = time.time()
         while not self.all_pieces_completed():
             self.check_chunk_state()
+
+            if time.time() - last_time:
+                logger.debug(f'cubic_window: {self.cubic.cwind}, now_window: {self.cubic.now_wind}')
+                last_time = time.time()
 
             for piece in self.pieces:
                 piece_index = piece.piece_index
@@ -237,6 +242,5 @@ class BitTorrent:
         print(f"[piece: {self.complete_pieces} / {self.number_of_pieces}]"
               f"[block: {block_num} / {self.num_of_all_of_blocks + 1}, "
               f"{progress:.2f}%], "
-              f"Throughput: {throughput:.2f}Mbps ",
-              f"window_size: {self.cubic.cwind}")
+              f"[Throughput: {throughput:.2f}Mbps]")
         print(self.bitfield)
