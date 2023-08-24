@@ -21,6 +21,10 @@ EVALUATION = True
 EVALUATION_PATH = "/client/evaluation/ccn_client/test"
 
 
+class MaxWindowSize(Exception):
+    pass
+
+
 class BitTorrent:
     def __init__(self, torrent: Torrent):
         """
@@ -130,24 +134,30 @@ class BitTorrent:
                 print(f'cubic_window: {int(self.cubic.cwind)}, now_window: {self.cubic.now_wind}')
                 last_time = time.time()
 
-            for piece in self.pieces:
-                piece_index = piece.piece_index
+            def send_piece_interest():
+                for piece in self.pieces:
+                    piece_index = piece.piece_index
 
-                for block_index, block in enumerate(piece.blocks):
+                    for block_index, block in enumerate(piece.blocks):
 
-                    if self.cubic.now_wind > self.cubic.cals_cwind():
-                        break
+                        if self.cubic.now_wind > self.cubic.cals_cwind():
+                            raise MaxWindowSize()
 
-                    if block.state == State.FREE:
-                        self.cef_handle.send_interest(
-                            name=self.name + '/' + str(piece_index),
-                            chunk_num=block_index
-                        )
-                        # logger.debug(f"piece_index: {piece_index}, chunk: {block_index}")
-                        piece.blocks[block_index].state = State.PENDING
-                        piece.blocks[block_index].last_seen = time.time()
-                        self.cubic.now_wind += 1
-                        # logger.debug(f"Send interest: {piece_index}, {chunk_num}")
+                        if block.state == State.FREE:
+                            self.cef_handle.send_interest(
+                                name=self.name + '/' + str(piece_index),
+                                chunk_num=block_index
+                            )
+                            # logger.debug(f"piece_index: {piece_index}, chunk: {block_index}")
+                            piece.blocks[block_index].state = State.PENDING
+                            piece.blocks[block_index].last_seen = time.time()
+                            self.cubic.now_wind += 1
+                            # logger.debug(f"Send interest: {piece_index}, {chunk_num}")
+
+            try:
+                send_piece_interest()
+            except MaxWindowSize:
+                pass
 
     def check_chunk_state(self):
         while self.queue.qsize() > 0:
