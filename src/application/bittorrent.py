@@ -134,7 +134,7 @@ class BitTorrent:
 
                     if block.state == State.FREE:
                         self.cef_handle.send_interest(
-                            name=self.name,
+                            name=self.name + '/' + str(piece_index),
                             chunk_num=block_index
                         )
                         logger.debug(f"piece_index: {piece_index}, chunk: {block_index}")
