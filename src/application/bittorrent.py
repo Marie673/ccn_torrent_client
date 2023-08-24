@@ -157,7 +157,7 @@ class BitTorrent:
             self.check_chunk_state()
 
             if time.time() - last_time > 1:
-                print(f'{Color.BLUE}cubic_window: {int(self.cubic.cwind)}, now_window: {self.cubic.now_wind}{Color.RESET}')
+                print(f'{Color.BG_BLUE}cubic_window: {int(self.cubic.cwind)}, now_window: {self.cubic.now_wind}{Color.RESET}')
                 last_time = time.time()
 
             def send_piece_interest():
@@ -278,7 +278,7 @@ class BitTorrent:
         throughput = ((block_num - self.last_bock_num) * CHUNK_SIZE * 8) / 1024 ** 2
         self.last_bock_num = block_num
         # throughput = (block_num * CHUNK_SIZE * 8 / (time.time() - self.started_time)) / 1024 ** 2
-        print(f"{Color.BG_WHITE}{Color.GREEN}"
+        print(f"{Color.GREEN}"
               f"[piece: {self.complete_pieces} / {self.number_of_pieces}]"
               f"[block: {block_num} / {self.num_of_all_of_blocks + 1}, "
               f"{progress:.2f}%], "
