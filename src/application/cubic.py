@@ -10,7 +10,7 @@ class Cubic:
         self.w_max = 0  # パケロス検出時のウィンドウサイズ
 
         self.C = 0.4  # 増幅幅を決めるパラメータ
-        self.B = 0.2  # パケロス検出時のウィンドウサイズ減少幅
+        self.B = 0.1  # パケロス検出時のウィンドウサイズ減少幅 default = 0.2
 
         self.t = 0  # パケロス検出時からの経過時間
         self.last_time_loss = time.time()
