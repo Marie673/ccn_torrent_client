@@ -137,7 +137,7 @@ class BitTorrent:
                             name=self.name + '/' + str(piece_index),
                             chunk_num=block_index
                         )
-                        logger.debug(f"piece_index: {piece_index}, chunk: {block_index}")
+                        # logger.debug(f"piece_index: {piece_index}, chunk: {block_index}")
                         piece.blocks[block_index].state = State.PENDING
                         piece.blocks[block_index].last_seen = time.time()
                         self.cubic.now_wind += 1
