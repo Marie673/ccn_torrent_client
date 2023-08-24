@@ -172,7 +172,7 @@ class BitTorrent:
         self.cubic.now_wind = pending_chunk_num
 
     def handle_piece(self, info):
-        piece_index = info.name.split('/')[3]
+        piece_index = int(info.name.split('/')[3])
         payload = info.payload
         chunk_num = info.chunk_num
 
